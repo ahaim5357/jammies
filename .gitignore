@@ -1,0 +1,9 @@
+# Generated files / caches
+__pycache__
+
+# Environments
+notebook-test
+env
+
+# Playgrounds
+test
