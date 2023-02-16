@@ -6,12 +6,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project_patcher"
-version = "0.1.0.dev1"
+version = "0.1.0.dev2"
 authors = [
     { name = "Aaron Haim", email = "ahaim@wpi.edu" }
 ]
-description = "A project runner, diff generator, and patcher rolled into one"
+description = "A project constructor, diff generator, and patcher rolled into one"
 requires-python = ">=3.7"
+dependencies = []
+
+[project.optional-dependencies]
+requests = ["requests>=2.28"]
+git = ["GitPython>=3.1"]
 
 [tools.setuptools.packages.find]
 where = ["src"]
+
+[project.scripts]
+project_patcher = "project_patcher.main:main"

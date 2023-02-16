@@ -1,10 +1,13 @@
+"""TODO: Document"""
+
 import os
 from project_patcher.struct.codec import DictObject
 from project_patcher.metadata.file import ProjectFile, ProjectFileCodec
 from project_patcher.integration.i_requests import download_and_write
 
 class URLProjectFile(ProjectFile):
-    """A project file for a file at a downloadable url link. The file will be obtained via a GET request."""
+    """A project file for a file at a downloadable url link.
+    The file will be obtained via a GET request."""
 
     def __init__(self, url: str, dir: str = os.curdir) -> None:
         """
@@ -17,12 +20,12 @@ class URLProjectFile(ProjectFile):
         """
         super().__init__(dir)
         self.url: str = url
-    
+
     def codec(self) -> 'ProjectFileCodec':
         # Lazily load singletons
         from project_patcher.singleton import URL_FILE_CODEC
         return URL_FILE_CODEC
-    
+
     def setup(self, root_dir: str) -> bool:
         super().setup(root_dir)
         return download_and_write(self.url, unzip_file = False, dir = self._create_path(root_dir))

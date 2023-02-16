@@ -1,3 +1,5 @@
+"""TODO: Document"""
+
 import os
 from typing import Set, Optional
 from project_patcher.struct.codec import DictObject
@@ -15,14 +17,16 @@ _VALID_BRANCH_TYPES: Set[str] = {
 class GitProjectFile(ProjectFile):
     """A project file for an Git repository."""
 
-    def __init__(self, repository: str, branch: Optional[str] = None, branch_type: str = 'branch', dir: str = os.curdir) -> None:
+    def __init__(self, repository: str, branch: Optional[str] = None,
+            branch_type: str = 'branch', dir: str = os.curdir) -> None:
         """
         Parameters
         ----------
         repository : str
             The Git link for the repository location.
         branch : str | None (default None)
-            The name of the checkout location. If `None`, the default checkout location will be used.
+            The name of the checkout location. If `None`, the default checkout
+            location will be used.
         branch_type : str (default 'branch')
             The name of the key holding the branch. Must be within `_VALID_BRANCH_TYPES`.
         dir : str (default '.')
@@ -32,14 +36,15 @@ class GitProjectFile(ProjectFile):
         self.repository: str = repository
         self.branch: Optional[str] = branch
         if branch_type not in _VALID_BRANCH_TYPES:
-            raise ValueError(f'\"{branch_type}\" is not a valid branch type. Specify one of the following: {", ".join(_VALID_BRANCH_TYPES)}')
+            raise ValueError(f'\"{branch_type}\" is not a valid branch type. \
+                Specify one of the following: {", ".join(_VALID_BRANCH_TYPES)}')
         self.branch_type: str = branch_type
-    
+
     def codec(self) -> 'ProjectFileCodec':
         # Lazily load singletons
         from project_patcher.singleton import GIT_FILE_CODEC
         return GIT_FILE_CODEC
-    
+
     def setup(self, root_dir: str) -> bool:
         super().setup(root_dir)
 
@@ -62,5 +67,9 @@ class GitProjectFileCodec(ProjectFileCodec[GitProjectFile]):
     def decode_type(self, dir: str, obj: DictObject) -> GitProjectFile:
         for branch_name in _VALID_BRANCH_TYPES: # type: str
             if branch_name in obj:
-                return GitProjectFile(obj['repository'], branch=obj[branch_name], branch_type=branch_name, dir=dir)
+                return GitProjectFile(
+                    obj['repository'],
+                    branch=obj[branch_name],
+                    branch_type=branch_name, dir=dir
+                )
         return GitProjectFile(obj['repository'], dir=dir)

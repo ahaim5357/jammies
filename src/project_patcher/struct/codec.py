@@ -1,3 +1,5 @@
+"""TODO: Document"""
+
 from abc import ABC, abstractmethod
 from typing import TypeVar, Type, Dict, Any, Generic
 
@@ -30,7 +32,6 @@ class DictCodec(ABC, Generic[DataObject]):
         DataObject
             The decoded data object.
         """
-        pass
 
     @abstractmethod
     def encode(self, obj: DataObject) -> DictObject:
@@ -46,4 +47,3 @@ class DictCodec(ABC, Generic[DataObject]):
         Dict[str, Any]
             The encoded data object in a dictionary.
         """
-        pass

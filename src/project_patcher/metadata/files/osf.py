@@ -1,3 +1,5 @@
+"""TODO: Document"""
+
 import os
 from project_patcher.struct.codec import DictObject
 from project_patcher.metadata.file import ProjectFile, ProjectFileCodec
@@ -18,7 +20,7 @@ class OSFProjectFile(ProjectFile):
         super().__init__(dir)
         self.id: str = id
         self.__url: str = f'https://files.osf.io/v1/resources/{id}/providers/osfstorage/?zip='
-    
+
     def codec(self) -> 'ProjectFileCodec':
         # Lazily load singletons
         from project_patcher.singleton import OSF_FILE_CODEC

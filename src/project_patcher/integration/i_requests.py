@@ -49,7 +49,7 @@ def download_file(url: str, handler: Callable[[requests.Response, str], bool], s
         if _CONTENT_DISPOSITION in response.headers:
             for filename_lookup in re.findall(_FILENAME_REGEX, response.headers[_CONTENT_DISPOSITION]): # type: Tuple[str, str]
                 # If filename* is present, set and then break
-                if (name := filename_lookup[1]):
+                if (name := filename_lookup[1]): # name: str
                     filename = name
                     break
                 # Otherwise, set the normal filename and keep checking
@@ -61,7 +61,7 @@ def download_file(url: str, handler: Callable[[requests.Response, str], bool], s
             filename: str = str(uuid4())
             # Set file extension from content type, if available
             if _CONTENT_TYPE in response.headers:
-                if (ext := guess_extension(response.headers[_CONTENT_TYPE].partition(';')[0].strip())) is not None: # type: Optional[str]
+                if (ext := guess_extension(response.headers[_CONTENT_TYPE].partition(';')[0].strip())) is not None: # ext: Optional[str]
                     filename += ext
         
         # Handle the result of the downloaded file
@@ -108,7 +108,7 @@ def download_and_write(url: str, unzip_file: bool = True, dir: str = os.curdir, 
         # Unzip file if available and set
         if unzip_file and __filename.endswith('.zip'):
             with BytesIO(__response.content) as zip_bytes: # type: BytesIO
-                unzip(zip_bytes, dir = __dir)
+                unzip(zip_bytes, out_dir = __dir)
         # Otherwise do normal extraction
         else:
             # Create directory name if not already present

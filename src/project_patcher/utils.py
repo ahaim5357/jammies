@@ -1,3 +1,5 @@
+"""TODO: Document"""
+
 import sys
 import os
 from importlib.util import find_spec
@@ -21,10 +23,11 @@ def get_default(func: Callable[..., Any], param: str) -> Optional[Any]:
     Any | None
         The default value of the parameter, or `None` if not applicable.
     """
-    p: inspect.Parameter = inspect.signature(func).parameters[param]
-    return None if p.default is inspect.Parameter.empty else p.default
+    param_sig: inspect.Parameter = inspect.signature(func).parameters[param]
+    return None if param_sig.default is inspect.Parameter.empty else param_sig.default
 
-def get_or_default(dict_obj: Dict[str, Any], key: str, func: Callable[..., Any], param: Optional[str] = None) -> Optional[Any]:
+def get_or_default(dict_obj: Dict[str, Any], key: str, func: Callable[..., Any],
+        param: Optional[str] = None) -> Optional[Any]:
     """Gets the value within a dictionary, or the default from the function if none is specified.
 
     Parameters
@@ -63,15 +66,15 @@ def has_module(name: str) -> bool:
     """
     return (name in sys.modules) or (find_spec(name) is not None)
 
-def unzip(file: Union[str, IOBase], dir: str = os.curdir) -> None:
+def unzip(file: Union[str, IOBase], out_dir: str = os.curdir) -> None:
     """Unzips the file or stream to the specified directory.
 
     Parameters
     ----------
     file : str | io.IOBase
         The file or stream of the zip file.
-    dir : str (default '.')
+    out_dir : str (default '.')
         The directory to extract the zip file to.
     """
-    with ZipFile(file, 'r') as zip: # type: ZipFile
-        zip.extractall(dir)
+    with ZipFile(file, 'r') as zip_ref: # type: ZipFile
+        zip_ref.extractall(out_dir)

@@ -1,3 +1,5 @@
+"""TODO: Document"""
+
 import os
 from typing import TypeVar, List
 from abc import ABC, abstractmethod
@@ -18,7 +20,7 @@ class ProjectFile(ABC):
         """
         super().__init__()
         self.dir: str = dir
-    
+
     @abstractmethod
     def codec(self) -> 'ProjectFileCodec':
         """Returns the codec used to encode and decode this project file.
@@ -28,8 +30,7 @@ class ProjectFile(ABC):
         ProjectFileCodec
             The codec used to encode and decode this project file.
         """
-        pass
-    
+
     @abstractmethod
     def setup(self, root_dir: str) -> bool:
         """Sets up the project file for usage.
@@ -43,7 +44,8 @@ class ProjectFile(ABC):
         return False
 
     def _create_path(self, root_dir: str, *paths: str) -> str:
-        """Constructs a path from the root directory through the relative directory and any additional paths specified.
+        """Constructs a path from the root directory through the relative
+        directory and any additional paths specified.
 
         Parameters
         ----------
@@ -72,7 +74,7 @@ class ProjectFileCodec(DictCodec[PF]):
     PF
         The type of the project file to be encoded or decoded to.
     """
-    
+
     def decode(self, obj: DictObject) -> PF:
         return self.decode_type(get_or_default(obj, 'dir', ProjectFile), obj)
 
@@ -92,7 +94,6 @@ class ProjectFileCodec(DictCodec[PF]):
         PF
             The decoded ProjectFile.
         """
-        pass
 
     def encode(self, obj: PF) -> DictObject:
         # Lazily load registry
@@ -104,7 +105,7 @@ class ProjectFileCodec(DictCodec[PF]):
             dict_obj['dir'] = obj.dir
 
         return self.encode_type(obj, dict_obj)
-    
+
     @abstractmethod
     def encode_type(self, obj: PF, dict_obj: DictObject) -> DictObject:
         """Encodes a specific ProjectFile type to the dictionary.
@@ -121,4 +122,3 @@ class ProjectFileCodec(DictCodec[PF]):
         Dict[str, Any]
             The encoded ProjectFile in a dictionary.
         """
-        pass
