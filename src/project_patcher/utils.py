@@ -1,7 +1,10 @@
 import sys
+import os
 from importlib.util import find_spec
 import inspect
-from typing import Optional, Any, Dict, Callable
+from typing import Optional, Any, Dict, Callable, Union
+from io import IOBase
+from zipfile import ZipFile
 
 def get_default(func: Callable[..., Any], param: str) -> Optional[Any]:
     """Gets the default value of a function parameter, or `None` if not applicable.
@@ -59,3 +62,16 @@ def has_module(name: str) -> bool:
         `True` if the module exists, `False` otherwise.
     """
     return (name in sys.modules) or (find_spec(name) is not None)
+
+def unzip(file: Union[str, IOBase], dir: str = os.curdir) -> None:
+    """Unzips the file or stream to the specified directory.
+
+    Parameters
+    ----------
+    file : str | io.IOBase
+        The file or stream of the zip file.
+    dir : str (default '.')
+        The directory to extract the zip file to.
+    """
+    with ZipFile(file, 'r') as zip: # type: ZipFile
+        zip.extractall(dir)

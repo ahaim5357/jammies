@@ -1,5 +1,5 @@
 import os
-from typing import TypeVar
+from typing import TypeVar, List
 from abc import ABC, abstractmethod
 from project_patcher.struct.codec import DictObject, DictCodec
 from project_patcher.utils import get_default, get_or_default
@@ -29,6 +29,37 @@ class ProjectFile(ABC):
             The codec used to encode and decode this project file.
         """
         pass
+    
+    @abstractmethod
+    def setup(self, root_dir: str) -> bool:
+        """Sets up the project file for usage.
+
+        Parameters
+        ----------
+        root_dir : str
+            The root directory to set up the project file in.
+        """
+        os.makedirs(self._create_path(root_dir), exist_ok = True)
+        return False
+
+    def _create_path(self, root_dir: str, *paths: str) -> str:
+        """Constructs a path from the root directory through the relative directory and any additional paths specified.
+
+        Parameters
+        ----------
+        root_dir : str
+            The root directory to create the path from.
+        *paths : str
+            The paths after the project file's relative directory.
+
+        Returns
+        -------
+        str
+            The newly created path.
+        """
+        fpath: List[str] = [root_dir, self.dir]
+        fpath += paths
+        return os.sep.join(fpath)
 
 PF = TypeVar('PF', bound = ProjectFile)
 """The type of the project file."""

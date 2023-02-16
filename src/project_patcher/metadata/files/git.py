@@ -3,6 +3,7 @@ from typing import Set, Optional
 from project_patcher.struct.codec import DictObject
 from project_patcher.metadata.file import ProjectFile, ProjectFileCodec
 from project_patcher.utils import get_default
+from git import Repo
 
 _VALID_BRANCH_TYPES: Set[str] = {
     'branch',
@@ -38,6 +39,15 @@ class GitProjectFile(ProjectFile):
         # Lazily load singletons
         from project_patcher.singleton import GIT_FILE_CODEC
         return GIT_FILE_CODEC
+    
+    def setup(self, root_dir: str) -> bool:
+        super().setup(root_dir)
+
+        # Checkout and change branches, if applicable
+        repo: Repo = Repo.clone_from(self.repository, self._create_path(root_dir))
+        if self.branch is not None:
+            repo.git.checkout(self.branch)
+        return True
 
 class GitProjectFileCodec(ProjectFileCodec[GitProjectFile]):
     """A codec for encoding and decoding a GitProjectFile.

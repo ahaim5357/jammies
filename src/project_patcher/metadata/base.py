@@ -13,6 +13,22 @@ class ProjectMetadata:
             The files associated with the project. 
         """
         self.files: List[ProjectFile] = files
+    
+    def setup(self, root_dir: str) -> bool:
+        """Sets up the project for usage.
+
+        Parameters
+        ----------
+        root_dir : str
+            The root directory to set up the project in.
+        """
+        failed: List[ProjectFile] = []
+
+        for file in self.files: # type: ProjectFile
+            if not file.setup(root_dir):
+                failed.append(file)
+        
+        return (not failed)
 
 class ProjectMetadataCodec(ppc.DictCodec[ProjectMetadata]):
     """A codec for encoding and decoding a ProjectMetadata.
