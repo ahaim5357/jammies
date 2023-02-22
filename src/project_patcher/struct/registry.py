@@ -1,4 +1,5 @@
-"""TODO: Document"""
+"""A script containing a generic implementation of a registry system.
+"""
 
 from typing import TypeVar, Dict, Generic
 

@@ -1,4 +1,6 @@
-"""TODO: Document"""
+"""A script containing a generic implementation of an encoder and decoder
+for an object and a dictionary.
+"""
 
 from abc import ABC, abstractmethod
 from typing import TypeVar, Type, Dict, Any, Generic

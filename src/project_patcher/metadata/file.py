@@ -1,25 +1,28 @@
-"""TODO: Document"""
+"""A script containing information about handing a project file read
+from the metadata.
+"""
 
 import os
 from typing import TypeVar, List
 from abc import ABC, abstractmethod
-from project_patcher.struct.codec import DictObject, DictCodec
+from project_patcher.lazy import SINGLETON
 from project_patcher.utils import get_default, get_or_default
+from project_patcher.struct.codec import DictObject, DictCodec
 
 class ProjectFile(ABC):
     """An abstract class containing information about a file associated with the project.
     """
 
     @abstractmethod
-    def __init__(self, dir: str = os.curdir) -> None:
+    def __init__(self, rel_dir: str = os.curdir) -> None:
         """
         Parameters
         ----------
-        dir : str (default '.')
+        rel_dir : str (default '.')
             The directory the project file is located.
         """
         super().__init__()
-        self.dir: str = dir
+        self.dir: str = rel_dir
 
     @abstractmethod
     def codec(self) -> 'ProjectFileCodec':
@@ -76,15 +79,15 @@ class ProjectFileCodec(DictCodec[PF]):
     """
 
     def decode(self, obj: DictObject) -> PF:
-        return self.decode_type(get_or_default(obj, 'dir', ProjectFile), obj)
+        return self.decode_type(get_or_default(obj, 'dir', ProjectFile, param = 'rel_dir'), obj)
 
     @abstractmethod
-    def decode_type(self, dir: str, obj: DictObject) -> PF:
+    def decode_type(self, rel_dir: str, obj: DictObject) -> PF:
         """Decodes a dictionary to the specific ProjectFile type.
 
         Parameters
         ----------
-        dir : str
+        rel_dir : str
             The directory the ProjectFile is located.
         obj : Dict[str, Any]
             The dictionary containing the data for the ProjectFile.
@@ -96,12 +99,9 @@ class ProjectFileCodec(DictCodec[PF]):
         """
 
     def encode(self, obj: PF) -> DictObject:
-        # Lazily load registry
-        from project_patcher.singleton import _PROJECT_FILE_TYPES
-
         dict_obj: DictObject = {}
-        dict_obj['type'] = _PROJECT_FILE_TYPES.get_key(self)
-        if obj.dir != get_default(ProjectFile, 'dir'):
+        dict_obj['type'] = SINGLETON.PROJECT_FILE_TYPES.get_key(self)
+        if obj.dir != get_default(ProjectFile, 'rel_dir'):
             dict_obj['dir'] = obj.dir
 
         return self.encode_type(obj, dict_obj)

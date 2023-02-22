@@ -1,4 +1,5 @@
-"""TODO: Document"""
+"""A script containing helper methods used throughout the package.
+"""
 
 import sys
 import os

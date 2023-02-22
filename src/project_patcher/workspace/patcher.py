@@ -1,4 +1,6 @@
-"""TODO: Document"""
+"""A script containing the methods needed to create and apply patches
+between two blocks of text.
+"""
 
 # License: Public domain (CC0)
 # Isaac Turner 2016/12/05
@@ -18,7 +20,8 @@ class PatchError(ValueError):
     """The patch file contained invalid information.
     """
 
-def create_patch(from_text: str, to_text: str, filename: str = '') -> str:
+def create_patch(from_text: str, to_text: str, filename: str = '',
+        time: str = str(datetime.now())) -> str:
     """Creates a patch between two pieces of text. If equivalent, returns
     an empty string.
 
@@ -30,6 +33,8 @@ def create_patch(from_text: str, to_text: str, filename: str = '') -> str:
         The new text the patch will transform the original text to.
     filename : str (default '')
         The name of the file the patch is being applied for.
+    time : datetime.datetime (default str(datetime.datetime.now))
+        The time the patch was generated.
 
     Returns
     -------
@@ -41,7 +46,7 @@ def create_patch(from_text: str, to_text: str, filename: str = '') -> str:
         from_text.splitlines(keepends = True),
         to_text.splitlines(keepends = True),
         fromfile = filename, tofile = filename,
-        tofiledate = str(datetime.now())
+        tofiledate = time
     )
     # Join diffs together
     # Apply no eol if text line doesn't end with a newline

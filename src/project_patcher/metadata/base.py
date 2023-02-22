@@ -1,6 +1,8 @@
-"""TODO: Document"""
+"""A script containing information about handling the project metadata.
+"""
 
 from typing import List
+from project_patcher.lazy import SINGLETON
 from project_patcher.metadata.file import ProjectFile
 from project_patcher.struct.codec import DictCodec, DictObject
 
@@ -32,6 +34,16 @@ class ProjectMetadata:
 
         return not failed
 
+    def codec(self) -> 'ProjectMetadataCodec':
+        """Returns the codec used to encode and decode this metadata.
+
+        Returns
+        -------
+        ProjectFileCodec
+            The codec used to encode and decode this metadata.
+        """
+        return SINGLETON.METADATA_CODEC
+
 class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
     """A codec for encoding and decoding a ProjectMetadata.
     """
@@ -41,11 +53,20 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
         dict_obj['files'] = list(map(lambda file: file.codec().encode(file), obj.files))
         return dict_obj
 
-    def decode(self, obj: DictObject) -> ProjectMetadata:
-        # Lazily load registry
-        from project_patcher.singleton import _PROJECT_FILE_TYPES
+    def __decode_file(self, file: DictObject) -> ProjectFile:
+        """Decodes a project file from its type.
 
-        return ProjectMetadata(list(map(
-            lambda file: _PROJECT_FILE_TYPES[file['type']].decode(file),
-            obj['files']
-        )))
+        Parameters
+        ----------
+        file : Dict[str, Any]
+            The encoded project file.
+        
+        Returns
+        -------
+        `ProjectFile`
+            The decoded project file.
+        """
+        return SINGLETON.PROJECT_FILE_TYPES[file['type']].decode(file)
+
+    def decode(self, obj: DictObject) -> ProjectMetadata:
+        return ProjectMetadata(list(map(self.__decode_file, obj['files'])))
