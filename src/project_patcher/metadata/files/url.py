@@ -4,8 +4,8 @@
 import os
 from project_patcher.lazy import SINGLETON
 from project_patcher.struct.codec import DictObject
-from project_patcher.metadata.file import ProjectFile, ProjectFileCodec
-from project_patcher.integration.i_requests import download_and_write
+from project_patcher.metadata.file import ProjectFile, ProjectFileCodec, build_file
+from project_patcher.utils import download_and_write
 
 class URLProjectFile(ProjectFile):
     """A project file for a file at a downloadable url link.
@@ -30,6 +30,17 @@ class URLProjectFile(ProjectFile):
         super().setup(root_dir)
         return download_and_write(self.url, unzip_file = False,
             out_dir = self._create_path(root_dir))
+
+def build_url() -> URLProjectFile:
+    """Builds an URLProjectFile from user input.
+    
+    Returns
+    -------
+    URLProjectFile
+        The built project file.
+    """
+    url: str = input('Direct URL Link: ')
+    return build_file(lambda rel_dir: URLProjectFile(url, rel_dir = rel_dir))
 
 class URLProjectFileCodec(ProjectFileCodec[URLProjectFile]):
     """A codec for encoding and decoding an URLProjectFile.

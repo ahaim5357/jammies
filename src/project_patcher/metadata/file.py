@@ -3,7 +3,7 @@ from the metadata.
 """
 
 import os
-from typing import TypeVar, List
+from typing import TypeVar, List, Callable
 from abc import ABC, abstractmethod
 from project_patcher.lazy import SINGLETON
 from project_patcher.utils import get_default, get_or_default
@@ -68,6 +68,26 @@ class ProjectFile(ABC):
 
 PF = TypeVar('PF', bound = ProjectFile)
 """The type of the project file."""
+
+def build_file(callback: Callable[[str], PF]) -> PF:
+    """Builds a ProjectFile from user input based on the
+    passed in callback.
+    
+    Parameters
+    ----------
+    callback : (str) -> ProjectFile
+        A function that takes in the root directory of the ProjectFile
+        and returns the completed ProjectFile.
+    
+    Returns
+    -------
+    ProjectFile
+        The built project file.
+    """
+    def_rel_dir: str = get_default(ProjectFile, 'rel_dir')
+    rel_dir: str = \
+        input(f"Directory to extract to (default '{def_rel_dir}'): ")
+    return callback(rel_dir if rel_dir else def_rel_dir)
 
 class ProjectFileCodec(DictCodec[PF]):
     """An abstract, generic encoder and decoder between a dictionary and a ProjectFile.

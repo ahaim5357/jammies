@@ -44,6 +44,23 @@ class ProjectMetadata:
         """
         return SINGLETON.METADATA_CODEC
 
+def build_metadata() -> ProjectMetadata:
+    """Builds a ProjectMetadata from user input.
+    
+    Returns
+    -------
+    ProjectMetadata
+        The built project metadata.
+    """
+    available_file_types: str = ', '.join(SINGLETON.PROJECT_FILE_BUILDERS.keys())
+    files: List[ProjectFile] = []
+    get_file: bool = True
+    while get_file:
+        file_type: str = input(f"Add file ({available_file_types}): ").lower()
+        files.append(SINGLETON.PROJECT_FILE_BUILDERS[file_type]())
+        get_file = input('Would you like to add another file? ').lower()[0] != 'n'
+    return ProjectMetadata(files)
+
 class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
     """A codec for encoding and decoding a ProjectMetadata.
     """

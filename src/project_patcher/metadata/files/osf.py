@@ -5,8 +5,8 @@ project.
 import os
 from project_patcher.lazy import SINGLETON
 from project_patcher.struct.codec import DictObject
-from project_patcher.metadata.file import ProjectFile, ProjectFileCodec
-from project_patcher.integration.i_requests import download_and_write
+from project_patcher.metadata.file import ProjectFile, ProjectFileCodec, build_file
+from project_patcher.utils import download_and_write
 
 class OSFProjectFile(ProjectFile):
     """A project file for an Open Science Framework repository."""
@@ -31,6 +31,17 @@ class OSFProjectFile(ProjectFile):
     def setup(self, root_dir: str) -> bool:
         super().setup(root_dir)
         return download_and_write(self.__url, out_dir = self._create_path(root_dir))
+
+def build_osf() -> OSFProjectFile:
+    """Builds an OSFProjectFile from user input.
+    
+    Returns
+    -------
+    OSFProjectFile
+        The built project file.
+    """
+    project_id: str = input('OSF Project Id: ')
+    return build_file(lambda rel_dir: OSFProjectFile(project_id, rel_dir = rel_dir))
 
 class OSFProjectFileCodec(ProjectFileCodec[OSFProjectFile]):
     """A codec for encoding and decoding an OSFProjectFile.

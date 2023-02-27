@@ -7,7 +7,7 @@ from git import Repo
 from project_patcher.lazy import SINGLETON
 from project_patcher.utils import get_default
 from project_patcher.struct.codec import DictObject
-from project_patcher.metadata.file import ProjectFile, ProjectFileCodec
+from project_patcher.metadata.file import ProjectFile, ProjectFileCodec, build_file
 
 _VALID_BRANCH_TYPES: Set[str] = {
     'branch',
@@ -53,6 +53,25 @@ class GitProjectFile(ProjectFile):
         if self.branch is not None:
             repo.git.checkout(self.branch)
         return True
+
+def build_git() -> GitProjectFile:
+    """Builds a GitProjectFile from user input.
+    
+    Returns
+    -------
+    GitProjectFile
+        The built project file.
+    """
+    repository: str = input('Git Repository: ')
+    def_branch_type: str = get_default(GitProjectFile, 'branch')
+    branch_type: str = \
+        input(f"{', '.join(_VALID_BRANCH_TYPES)} (default '{def_branch_type}'): ").lower()
+    branch: Optional[str] = input(f"{branch_type} (default branch): ")
+    if not branch:
+        branch = None
+    return build_file(lambda rel_dir:
+        GitProjectFile(repository, branch = branch, branch_type = branch_type, rel_dir = rel_dir)
+    )
 
 class GitProjectFileCodec(ProjectFileCodec[GitProjectFile]):
     """A codec for encoding and decoding a GitProjectFile.
