@@ -13,7 +13,7 @@ from datetime import datetime
 _NO_EOL: str = '\\ No newline at end of file'
 """Text indicating there is no newline at the end of the diff file."""
 
-_HUNK_HEADER: re.Pattern[str] = re.compile(r'^@@ -(\d+),?(\d+)? \+(\d+),?(\d+)? @@$')
+_HUNK_HEADER: re.Pattern = re.compile(r'^@@ -(\d+),?(\d+)? \+(\d+),?(\d+)? @@$')
 """The regex to get the file line information from the hunk header."""
 
 class PatchError(ValueError):

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project_patcher"
-version = "0.1.0.dev5"
+version = "0.1.0.dev6"
 authors = [
     { name = "Aaron Haim", email = "ahaim@wpi.edu" }
 ]

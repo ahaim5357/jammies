@@ -35,7 +35,7 @@ def init(import_metadata: Optional[str] = None) -> None:
     # Setup workspace
     wspc.setup_clean(metadata)
     wspc.setup_working()
-    
+
     print('Success!')
 
 @main.command(name = 'output')
