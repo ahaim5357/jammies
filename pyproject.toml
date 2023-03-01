@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project_patcher"
-version = "0.1.0.dev4"
+version = "0.1.0.dev5"
 authors = [
     { name = "Aaron Haim", email = "ahaim@wpi.edu" }
 ]
@@ -24,4 +24,4 @@ git = ["GitPython>=3.1"]
 where = ["src"]
 
 [project.scripts]
-project_patcher = "project_patcher.main:main"
+project_patcher = "project_patcher.cli:main"
