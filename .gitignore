@@ -1,6 +1,7 @@
 # Generated files / caches
 __pycache__
 *.egg-info/
+dist
 
 # Environments
 notebook-test

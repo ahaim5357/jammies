@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 name = "project_patcher"
 version = "0.1.0"
 authors = [
-    { name = "Aaron Haim", email = "ahaim@wpi.edu" }
+    { name = "Aaron Haim", email = "ahaim@ashwork.net" }
 ]
 description = "A project constructor, diff generator, and patcher rolled into one"
 readme = "README.md"
