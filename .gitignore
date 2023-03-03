@@ -1,0 +1,14 @@
+# Generated files / caches
+__pycache__
+*.egg-info/
+dist
+
+# Environments
+notebook-test
+env
+
+# Visual Studio Code
+.vscode
+
+# Playgrounds
+test
