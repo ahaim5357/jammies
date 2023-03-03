@@ -26,7 +26,8 @@ def main() -> None:
 )
 def init(import_metadata: Optional[str] = None) -> None:
     """Initializes a new project or an existing project from the
-    metadata JSON in the executing directory or via an import.
+    metadata JSON in the executing directory, an import, or from
+    the metadata builder if neither are present.
     """
 
     # Get metadata
@@ -40,7 +41,8 @@ def init(import_metadata: Optional[str] = None) -> None:
 
 @main.command(name = 'output')
 def output() -> None:
-    """TODO: Document"""
+    """Generates any patches and clones the new files to an output
+    directory."""
 
     # Output working and generate patches
     wspc.output_working()
