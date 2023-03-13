@@ -1,6 +1,7 @@
 [build-system]
 requires = [
-    "setuptools>=61.0"
+    "setuptools>=61.0",
+    "pip>=22.0"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -25,6 +26,7 @@ issue_tracker = "https://github.com/ahaim5357/project-patcher/issues"
 
 [project.optional-dependencies]
 git = ["GitPython>=3.1"]
+all = ["project_patcher[git]"]
 
 [tools.setuptools.packages.find]
 where = ["src"]
