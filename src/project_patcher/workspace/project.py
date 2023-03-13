@@ -22,7 +22,20 @@ _PATCH_EXTENSION: str = 'patch'
 
 # TODO: Expand to read metadata inside another json object
 def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) -> ProjectMetadata:
-    """TODO: Document"""
+    """Creates or reads project metadata for the current / to-be workspace.
+
+    Parameters
+    ----------
+    dirpath : str (default '.')
+        The directory of the (to-be) workspace.
+    import_loc: str | None (default None)
+        The location to read the project metadata from. Either a directory or a url.
+    
+    Returns
+    -------
+    project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current / to-be workspace.
+    """
 
     # First check if an import is specified
     if import_loc is not None:
@@ -31,7 +44,18 @@ def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) ->
             json_bytes: bytes = None
 
             def get_metadata_str(response: Response) -> bool:
-                """TODO: Document"""
+                """Reads the bytes of a response object into a higher scope variable.
+                
+                Parameters
+                ----------
+                response: response.Response
+                    The response of the request.
+                
+                Returns
+                -------
+                bool
+                    Whether the operation was successfully executed.
+                """
 
                 nonlocal json_bytes
                 json_bytes = response.content
@@ -57,13 +81,37 @@ def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) ->
     return write_metadata_to_file(dirpath, METADATA_BUILDER())
 
 def read_metadata_from_file(path: str) -> ProjectMetadata:
-    """TODO: Document"""
+    """Reads a project metadata from a file location.
+
+    Parameters
+    ----------
+    path : str
+        The path to the project metadata JSON.
+
+    Returns
+    -------
+    project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current / to-be workspace.
+    """
 
     with open(path, mode = 'r', encoding = 'UTF-8') as file:
         return METADATA_CODEC.decode(json.load(file))
 
 def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMetadata:
-    """TODO: Document"""
+    """Writes a project metadata, named `project_metadata.json`, to a file location.
+
+    Parameters
+    ----------
+    dirpath : str
+        The directory to write the project metadata to.
+    metadata : project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current workspace.
+    
+    Returns
+    -------
+    metadata : project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current workspace.
+    """
 
     with open(os.sep.join([dirpath, _PROJECT_METADATA_NAME]),
             mode = 'w', encoding = 'UTF-8') as file:
@@ -73,7 +121,22 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
 
 def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
         invalidate_cache: bool = False) -> bool:
-    """TODO: Document"""
+    """Generates a clean workspace from the project metadata.
+
+    Parameters
+    ----------
+    metadata : project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current workspace.
+    clean_dir : str (default '_clean')
+        The directory to generate the clean workspace within.
+    invalidate_cache : bool (default False)
+        When `True`, removes any cached files for the clean workspace.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # If the cache should be invalidated, delete the clean directory
     if invalidate_cache and os.path.exists(clean_dir) and os.path.isdir(clean_dir):
@@ -85,7 +148,20 @@ def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
         else metadata.setup(clean_dir)
 
 def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> bool:
-    """TODO: Document"""
+    """Applies patches to the working directory.
+
+    Parameters
+    ----------
+    working_dir : str (default '_src')
+        The directory containing the clean workspace to-be patched. 
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Assume both directories are present
     for subdir, _, files in os.walk(patch_dir):
@@ -108,7 +184,25 @@ def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> boo
 
 def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
         patch_dir: str = '_patches', out_dir: str = '_out') -> bool:
-    """TODO: Document"""
+    """Generates a working directory from the project metadata and any additional
+    files and patches.
+
+    Parameters
+    ----------
+    clean_dir : str (default '_clean')
+        The directory containing the raw project files.
+    working_dir : str (default '_src')
+        The directory containing the clean workspace to-be patched. 
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    out_dir : str (default '_out')
+        The directory containing additional files for the workspace.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Remove existing working directory if exists
     if os.path.exists(working_dir) and os.path.isdir(working_dir):
@@ -131,7 +225,26 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
 
 def generate_patch(path: str, work_path: str, clean_path: str,
         patch_dir: str = '_patches', time: str = str(datetime.now())) -> bool:
-    """TODO: Document"""
+    """Generates a patch between two files if they are not equal.
+
+    Parameters
+    ----------
+    path : str
+        The relative path of the file.
+    work_path : str
+        The path of the file in the working directory.
+    clean_path : str
+        The path of the file in the clean directory.
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    time : str  (default `datetime.datetime.now`)
+        The time the patch was generated.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Assume patches directory exists
 
@@ -151,7 +264,22 @@ def generate_patch(path: str, work_path: str, clean_path: str,
     return True
 
 def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
-    """TODO: Document"""
+    """Copies an additional file for the workspace to the output directory.
+    
+    Parameters
+    ----------
+    path : str
+        The relative path of the file.
+    work_path : str
+        The path of the file in the working directory.
+    out_dir : str (default '_out')
+        The directory containing additional files for the workspace.
+
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Assume output directory exists
 
@@ -164,7 +292,24 @@ def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
 
 def output_working(clean_dir: str = '_clean', working_dir: str = '_src',
         patch_dir: str = '_patches', out_dir: str = '_out') -> bool:
-    """TODO: Document"""
+    """Generates the patches and copies any additional files for construction.
+    
+    Parameters
+    ----------
+    clean_dir : str (default '_clean')
+        The directory containing the raw project files.
+    working_dir : str (default '_src')
+        The directory containing the clean workspace to-be patched. 
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    out_dir : str (default '_out')
+        The directory containing additional files for the workspace.
+
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Current time
     time: str = str(datetime.now())

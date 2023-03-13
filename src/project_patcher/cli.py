@@ -1,4 +1,5 @@
-"""TODO: Document"""
+"""A script containing the methods needed for command line integration.
+"""
 
 from typing import Optional
 import click
