@@ -183,7 +183,7 @@ def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> boo
     return True
 
 def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
-        patch_dir: str = '_patches', out_dir: str = '_out') -> bool:
+        patch_dir: str = '_patches', out_dir: str = '_out', include_hidden: bool = False) -> bool:
     """Generates a working directory from the project metadata and any additional
     files and patches.
 
@@ -212,7 +212,11 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
     os.makedirs(working_dir)
 
     # Copy clean directory into working directory (clean directory must exist)
-    shutil.copytree(clean_dir, working_dir, dirs_exist_ok = True)
+    if include_hidden:
+        shutil.copytree(clean_dir, working_dir, dirs_exist_ok = True)
+    else:
+        shutil.copytree(clean_dir, working_dir, dirs_exist_ok = True,
+            ignore = shutil.ignore_patterns('.*'))
 
     # If an output directory exists, copy into working directory
     if os.path.exists(out_dir) and os.path.isdir(out_dir):

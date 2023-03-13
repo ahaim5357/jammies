@@ -23,9 +23,14 @@ def main() -> None:
     '--import_metadata', '-I',
     type = str,
     default = None,
-    help = "A path or URL to the metadata JSON."
+    help = 'A path or URL to the metadata JSON.'
 )
-def init(import_metadata: Optional[str] = None) -> None:
+@click.option(
+    '-a', '-A', 'include_hidden',
+    is_flag = True,
+    help = 'When added, copies hidden files to the working directory.'
+)
+def init(import_metadata: Optional[str] = None, include_hidden: bool = False) -> None:
     """Initializes a new project or an existing project from the
     metadata JSON in the executing directory, an import, or from
     the metadata builder if neither are present.
@@ -36,7 +41,7 @@ def init(import_metadata: Optional[str] = None) -> None:
 
     # Setup workspace
     wspc.setup_clean(metadata)
-    wspc.setup_working()
+    wspc.setup_working(include_hidden = include_hidden)
 
     print('Success!')
 
