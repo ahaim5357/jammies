@@ -256,7 +256,7 @@ def generate_patch(path: str, work_path: str, clean_path: str,
             open(clean_path, mode = 'r', encoding = 'UTF-8') as clean_file:
         # Generate patch file if not empty
         if (patch_text := create_patch(clean_file.read(), work_file.read(),
-                filename = PurePath(path).as_posix(),
+                filename = path,
                 time = time)):
             patch_path: str = os.path.join(patch_dir,
                 os.extsep.join([path, _PATCH_EXTENSION]))
@@ -294,12 +294,14 @@ def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
 
     return True
 
-def output_working(clean_dir: str = '_clean', working_dir: str = '_src',
+def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working_dir: str = '_src',
         patch_dir: str = '_patches', out_dir: str = '_out') -> bool:
     """Generates the patches and copies any additional files for construction.
     
     Parameters
     ----------
+    metadata : project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current workspace.
     clean_dir : str (default '_clean')
         The directory containing the raw project files.
     working_dir : str (default '_src')
@@ -324,16 +326,27 @@ def output_working(clean_dir: str = '_clean', working_dir: str = '_src',
     if os.path.exists(patch_dir) and os.path.isdir(patch_dir):
         shutil.rmtree(patch_dir)
 
+    # Generate ignored and overwritten list
+    ignore, overwrite = metadata.ignore_and_overwrite(working_dir) # Set[str], Set[str]
+
     for subdir, _, files in os.walk(working_dir):
         for file in files:
             # Setup paths
             work_path: str = os.path.join(subdir, file)
-            rel_path: str = work_path[(len(working_dir) + 1):]
+            rel_path: str = PurePath(work_path[(len(working_dir) + 1):]).as_posix()
             clean_path: str = os.path.join(clean_dir, rel_path)
 
             # If clean file exists, generate patch and write
             if os.path.exists(clean_path):
-                generate_patch(rel_path, work_path, clean_path, patch_dir = patch_dir, time = time)
+                if rel_path in ignore:
+                    pass # Ignore patch generation if in relative
+                elif rel_path in overwrite:
+                    # Copy file to output if overwrite
+                    output_file(rel_path, work_path, out_dir = out_dir)
+                else:
+                    # Otherwise generate the patch
+                    generate_patch(rel_path, work_path, clean_path,
+                        patch_dir = patch_dir, time = time)
 
             # Otherwise output files to directory
             else:
