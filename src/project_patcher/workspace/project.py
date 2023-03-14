@@ -316,6 +316,9 @@ def generate_patch(path: str, work_path: str, clean_path: str,
         Whether the operation was successfully executed.
     """
 
+    # Basic variables
+    tmp_patch_dir: str = os.path.join(_TMP_DIR, patch_dir)
+
     # Assume patches directory exists
 
     with open(work_path, mode = 'r', encoding = 'UTF-8') as work_file, \
@@ -411,7 +414,7 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working
         for file in files:
             # Setup paths
             work_path: str = os.path.join(subdir, file)
-            rel_path: str = PurePath(work_path[(len(working_dir) + 1):]).as_posix()
+            rel_path: str = work_path[(len(working_dir) + 1):]
             clean_path: str = os.path.join(clean_dir, rel_path)
             rel_path_posix: str = PurePath(rel_path).as_posix()
 
