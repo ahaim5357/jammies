@@ -134,7 +134,7 @@ def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
     clean_dir : str (default '_clean')
         The directory to generate the clean workspace within.
     invalidate_cache : bool (default False)
-        When `True`, removes any cached files for the clean workspace.
+        When `True`, removes any cached files from the clean workspace.
     
     Returns
     -------
@@ -201,6 +201,8 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
         The directory containing the patches for the project files.
     out_dir : str (default '_out')
         The directory containing additional files for the workspace.
+    include_hidden : bool (default False)
+        When `True`, copies hidden files to the working directory.
     
     Returns
     -------
@@ -222,6 +224,29 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
         shutil.copytree(clean_dir, working_dir, dirs_exist_ok = True,
             ignore = shutil.ignore_patterns('.*'))
 
+    return setup_working_raw(working_dir = working_dir, patch_dir = patch_dir,
+        out_dir = out_dir)
+
+def setup_working_raw(working_dir: str = '_src', patch_dir: str = '_patches',
+        out_dir: str = '_out') -> bool:
+    """Generates a working directory from the project metadata and any additional
+    files and patches. Performs no validation checks.
+
+    Parameters
+    ----------
+    working_dir : str (default '_src')
+        The directory containing the clean workspace to-be patched. 
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    out_dir : str (default '_out')
+        The directory containing additional files for the workspace.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
+
     # If an output directory exists, copy into working directory
     if os.path.exists(out_dir) and os.path.isdir(out_dir):
         shutil.copytree(out_dir, working_dir, dirs_exist_ok = True)
@@ -230,6 +255,43 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
     return apply_patches(working_dir, patch_dir) \
         if os.path.exists(patch_dir) and os.path.isdir(patch_dir) \
         else True
+
+def check_existing_patch(rel_patch_path: str, patch_path: str,
+        patch_text: str, patch_dir: str = '_patches') -> bool:
+    """Returns whether there is an equivalent, existing patch and copies it from the
+    temporary directory.
+
+    Parameters
+    ----------
+    rel_patch_path : str
+        The relative path to the patch.
+    patch_path : str
+        The path to the patch output location.
+    patch_text : str
+        The text of the patch file.
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+
+    Returns
+    -------
+    bool
+        If `True`, there is an equivalent, existing patch
+    """
+
+    if os.path.exists(temp_patch_path :=
+            os.path.join(os.path.join(_TMP_DIR, patch_dir), rel_patch_path)):
+        # Read existing patch for comparison
+        patch_text_no_head: str = ''.join(patch_text.splitlines(keepends = True)[2:])
+        temp_patch_text: Optional[str] = None
+        with open(temp_patch_path, mode = 'r', encoding = 'UTF-8') as temp_patch_file:
+            temp_patch_text: str = ''.join(temp_patch_file.readlines()[2:])
+
+        # If patches are equivalent, move file
+        if patch_text_no_head == temp_patch_text:
+            shutil.move(temp_patch_path, patch_path)
+            return True
+
+    return False
 
 def generate_patch(path: str, work_path: str, clean_path: str,
         patch_dir: str = '_patches', time: str = str(datetime.now())) -> bool:
@@ -254,9 +316,6 @@ def generate_patch(path: str, work_path: str, clean_path: str,
         Whether the operation was successfully executed.
     """
 
-    # Basic variables
-    tmp_patch_dir: str = os.path.join(_TMP_DIR, patch_dir)
-
     # Assume patches directory exists
 
     with open(work_path, mode = 'r', encoding = 'UTF-8') as work_file, \
@@ -271,17 +330,8 @@ def generate_patch(path: str, work_path: str, clean_path: str,
             # Create directory if necessary
             os.makedirs(os.path.dirname(patch_path), exist_ok = True)
 
-            if os.path.exists(temp_patch_path := os.path.join(tmp_patch_dir, rel_patch_path)):
-                # Read existing patch for comparison
-                patch_text_no_head: str = ''.join(patch_text.splitlines(keepends = True)[2:])
-                temp_patch_text: Optional[str] = None
-                with open(temp_patch_path, mode = 'r', encoding = 'UTF-8') as temp_patch_file:
-                    temp_patch_text: str = ''.join(temp_patch_file.readlines()[2:])
-
-                # If patches are equivalent, move file
-                if patch_text_no_head == temp_patch_text:
-                    shutil.move(temp_patch_path, patch_path)
-                    return True
+            if check_existing_patch(rel_patch_path, patch_path, patch_text, patch_dir = patch_dir):
+                return True
 
             # Otherwise write new patch
             with open(patch_path, mode = 'w', encoding = 'UTF-8') as patch_file:
