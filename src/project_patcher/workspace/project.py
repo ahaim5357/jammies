@@ -16,13 +16,30 @@ from project_patcher.metadata.base import ProjectMetadata
 from project_patcher.workspace.patcher import apply_patch, create_patch
 
 _PROJECT_METADATA_NAME: str = 'project_metadata.json'
-_PATCH_EXTENSION: str = 'patch'
+"""The file name of the project metadata."""
 
+_PATCH_EXTENSION: str = 'patch'
 """The extension of a patch file."""
+
+_TMP_DIR: str = '.tmp'
+"""The directory for temporary files or directories."""
 
 # TODO: Expand to read metadata inside another json object
 def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) -> ProjectMetadata:
-    """TODO: Document"""
+    """Creates or reads project metadata for the current / to-be workspace.
+
+    Parameters
+    ----------
+    dirpath : str (default '.')
+        The directory of the (to-be) workspace.
+    import_loc: str | None (default None)
+        The location to read the project metadata from. Either a directory or a url.
+    
+    Returns
+    -------
+    project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current / to-be workspace.
+    """
 
     # First check if an import is specified
     if import_loc is not None:
@@ -31,7 +48,18 @@ def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) ->
             json_bytes: bytes = None
 
             def get_metadata_str(response: Response) -> bool:
-                """TODO: Document"""
+                """Reads the bytes of a response object into a higher scope variable.
+                
+                Parameters
+                ----------
+                response: response.Response
+                    The response of the request.
+                
+                Returns
+                -------
+                bool
+                    Whether the operation was successfully executed.
+                """
 
                 nonlocal json_bytes
                 json_bytes = response.content
@@ -57,13 +85,37 @@ def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) ->
     return write_metadata_to_file(dirpath, METADATA_BUILDER())
 
 def read_metadata_from_file(path: str) -> ProjectMetadata:
-    """TODO: Document"""
+    """Reads a project metadata from a file location.
+
+    Parameters
+    ----------
+    path : str
+        The path to the project metadata JSON.
+
+    Returns
+    -------
+    project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current / to-be workspace.
+    """
 
     with open(path, mode = 'r', encoding = 'UTF-8') as file:
         return METADATA_CODEC.decode(json.load(file))
 
 def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMetadata:
-    """TODO: Document"""
+    """Writes a project metadata, named `project_metadata.json`, to a file location.
+
+    Parameters
+    ----------
+    dirpath : str
+        The directory to write the project metadata to.
+    metadata : project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current workspace.
+    
+    Returns
+    -------
+    metadata : project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current workspace.
+    """
 
     with open(os.sep.join([dirpath, _PROJECT_METADATA_NAME]),
             mode = 'w', encoding = 'UTF-8') as file:
@@ -73,7 +125,22 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
 
 def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
         invalidate_cache: bool = False) -> bool:
-    """TODO: Document"""
+    """Generates a clean workspace from the project metadata.
+
+    Parameters
+    ----------
+    metadata : project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current workspace.
+    clean_dir : str (default '_clean')
+        The directory to generate the clean workspace within.
+    invalidate_cache : bool (default False)
+        When `True`, removes any cached files from the clean workspace.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # If the cache should be invalidated, delete the clean directory
     if invalidate_cache and os.path.exists(clean_dir) and os.path.isdir(clean_dir):
@@ -85,7 +152,20 @@ def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
         else metadata.setup(clean_dir)
 
 def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> bool:
-    """TODO: Document"""
+    """Applies patches to the working directory.
+
+    Parameters
+    ----------
+    working_dir : str (default '_src')
+        The directory containing the clean workspace to-be patched. 
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Assume both directories are present
     for subdir, _, files in os.walk(patch_dir):
@@ -107,8 +187,28 @@ def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> boo
     return True
 
 def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
-        patch_dir: str = '_patches', out_dir: str = '_out') -> bool:
-    """TODO: Document"""
+        patch_dir: str = '_patches', out_dir: str = '_out', include_hidden: bool = False) -> bool:
+    """Generates a working directory from the project metadata and any additional
+    files and patches.
+
+    Parameters
+    ----------
+    clean_dir : str (default '_clean')
+        The directory containing the raw project files.
+    working_dir : str (default '_src')
+        The directory containing the clean workspace to-be patched. 
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    out_dir : str (default '_out')
+        The directory containing additional files for the workspace.
+    include_hidden : bool (default False)
+        When `True`, copies hidden files to the working directory.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Remove existing working directory if exists
     if os.path.exists(working_dir) and os.path.isdir(working_dir):
@@ -118,7 +218,34 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
     os.makedirs(working_dir)
 
     # Copy clean directory into working directory (clean directory must exist)
-    shutil.copytree(clean_dir, working_dir, dirs_exist_ok = True)
+    if include_hidden:
+        shutil.copytree(clean_dir, working_dir, dirs_exist_ok = True)
+    else:
+        shutil.copytree(clean_dir, working_dir, dirs_exist_ok = True,
+            ignore = shutil.ignore_patterns('.*'))
+
+    return setup_working_raw(working_dir = working_dir, patch_dir = patch_dir,
+        out_dir = out_dir)
+
+def setup_working_raw(working_dir: str = '_src', patch_dir: str = '_patches',
+        out_dir: str = '_out') -> bool:
+    """Generates a working directory from the project metadata and any additional
+    files and patches. Performs no validation checks.
+
+    Parameters
+    ----------
+    working_dir : str (default '_src')
+        The directory containing the clean workspace to-be patched. 
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    out_dir : str (default '_out')
+        The directory containing additional files for the workspace.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # If an output directory exists, copy into working directory
     if os.path.exists(out_dir) and os.path.isdir(out_dir):
@@ -129,9 +256,65 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
         if os.path.exists(patch_dir) and os.path.isdir(patch_dir) \
         else True
 
+def check_existing_patch(rel_patch_path: str, patch_path: str,
+        patch_text: str, patch_dir: str = '_patches') -> bool:
+    """Returns whether there is an equivalent, existing patch and copies it from the
+    temporary directory.
+
+    Parameters
+    ----------
+    rel_patch_path : str
+        The relative path to the patch.
+    patch_path : str
+        The path to the patch output location.
+    patch_text : str
+        The text of the patch file.
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+
+    Returns
+    -------
+    bool
+        If `True`, there is an equivalent, existing patch
+    """
+
+    if os.path.exists(temp_patch_path :=
+            os.path.join(os.path.join(_TMP_DIR, patch_dir), rel_patch_path)):
+        # Read existing patch for comparison
+        patch_text_no_head: str = ''.join(patch_text.splitlines(keepends = True)[2:])
+        temp_patch_text: Optional[str] = None
+        with open(temp_patch_path, mode = 'r', encoding = 'UTF-8') as temp_patch_file:
+            temp_patch_text: str = ''.join(temp_patch_file.readlines()[2:])
+
+        # If patches are equivalent, move file
+        if patch_text_no_head == temp_patch_text:
+            shutil.move(temp_patch_path, patch_path)
+            return True
+
+    return False
+
 def generate_patch(path: str, work_path: str, clean_path: str,
         patch_dir: str = '_patches', time: str = str(datetime.now())) -> bool:
-    """TODO: Document"""
+    """Generates a patch between two files if they are not equal.
+
+    Parameters
+    ----------
+    path : str
+        The relative path of the file.
+    work_path : str
+        The path of the file in the working directory.
+    clean_path : str
+        The path of the file in the clean directory.
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    time : str  (default `datetime.datetime.now`)
+        The time the patch was generated.
+    
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Assume patches directory exists
 
@@ -139,19 +322,40 @@ def generate_patch(path: str, work_path: str, clean_path: str,
             open(clean_path, mode = 'r', encoding = 'UTF-8') as clean_file:
         # Generate patch file if not empty
         if (patch_text := create_patch(clean_file.read(), work_file.read(),
-                filename = PurePath(path).as_posix(),
+                filename = path,
                 time = time)):
-            patch_path: str = os.path.join(patch_dir,
-                os.extsep.join([path, _PATCH_EXTENSION]))
+            rel_patch_path: str = os.extsep.join([path, _PATCH_EXTENSION])
+            patch_path: str = os.path.join(patch_dir, rel_patch_path)
+
             # Create directory if necessary
             os.makedirs(os.path.dirname(patch_path), exist_ok = True)
+
+            if check_existing_patch(rel_patch_path, patch_path, patch_text, patch_dir = patch_dir):
+                return True
+
+            # Otherwise write new patch
             with open(patch_path, mode = 'w', encoding = 'UTF-8') as patch_file:
                 patch_file.write(patch_text)
 
     return True
 
 def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
-    """TODO: Document"""
+    """Copies an additional file for the workspace to the output directory.
+    
+    Parameters
+    ----------
+    path : str
+        The relative path of the file.
+    work_path : str
+        The path of the file in the working directory.
+    out_dir : str (default '_out')
+        The directory containing additional files for the workspace.
+
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
 
     # Assume output directory exists
 
@@ -162,18 +366,43 @@ def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
 
     return True
 
-def output_working(clean_dir: str = '_clean', working_dir: str = '_src',
+def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working_dir: str = '_src',
         patch_dir: str = '_patches', out_dir: str = '_out') -> bool:
-    """TODO: Document"""
+    """Generates the patches and copies any additional files for construction.
+    
+    Parameters
+    ----------
+    metadata : project_patcher.metadata.base.ProjectMetadata
+        The metadata for the current workspace.
+    clean_dir : str (default '_clean')
+        The directory containing the raw project files.
+    working_dir : str (default '_src')
+        The directory containing the clean workspace to-be patched. 
+    patch_dir : str (default '_patches')
+        The directory containing the patches for the project files.
+    out_dir : str (default '_out')
+        The directory containing additional files for the workspace.
 
-    # Current time
+    Returns
+    -------
+    bool
+        Whether the operation was successfully executed.
+    """
+
+    # Basic variables
     time: str = str(datetime.now())
+
+    # Create temp dir (shouldn't exist)
+    os.makedirs(_TMP_DIR, exist_ok = True)
 
     # If patch directory and output exist, delete them
     if os.path.exists(out_dir) and os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
     if os.path.exists(patch_dir) and os.path.isdir(patch_dir):
-        shutil.rmtree(patch_dir)
+        shutil.move(patch_dir, _TMP_DIR)
+
+    # Generate ignored and overwritten list
+    ignore, overwrite = metadata.ignore_and_overwrite(working_dir) # Set[str], Set[str]
 
     for subdir, _, files in os.walk(working_dir):
         for file in files:
@@ -181,13 +410,24 @@ def output_working(clean_dir: str = '_clean', working_dir: str = '_src',
             work_path: str = os.path.join(subdir, file)
             rel_path: str = work_path[(len(working_dir) + 1):]
             clean_path: str = os.path.join(clean_dir, rel_path)
+            rel_path_posix: str = PurePath(rel_path).as_posix()
 
             # If clean file exists, generate patch and write
             if os.path.exists(clean_path):
-                generate_patch(rel_path, work_path, clean_path, patch_dir = patch_dir, time = time)
+                if rel_path_posix in ignore:
+                    pass # Ignore patch generation if in relative
+                elif rel_path_posix in overwrite:
+                    # Copy file to output if overwrite
+                    output_file(rel_path, work_path, out_dir = out_dir)
+                else:
+                    # Otherwise generate the patch
+                    generate_patch(rel_path, work_path, clean_path,
+                        patch_dir = patch_dir, time = time)
 
             # Otherwise output files to directory
             else:
                 output_file(rel_path, work_path, out_dir = out_dir)
 
+    # Delete temp directory afterwards
+    shutil.rmtree(_TMP_DIR)
     return True
