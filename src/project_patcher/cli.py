@@ -50,7 +50,10 @@ def output() -> None:
     """Generates any patches and clones the new files to an output
     directory."""
 
+    # Get metadata
+    metadata: ProjectMetadata = wspc.read_metadata()
+
     # Output working and generate patches
-    wspc.output_working()
+    wspc.output_working(metadata)
 
     print('Success!')
