@@ -14,7 +14,8 @@ class ProjectMetadata:
     """Metadata information associated with the project being patched or ran."""
 
     def __init__(self, files: List[ProjectFile],
-            ignore: Optional[List[str]] = None, overwrite: Optional[List[str]] = None) -> None:
+            ignore: Optional[List[str]] = None, overwrite: Optional[List[str]] = None,
+            extra: Optional[DictObject] = None) -> None:
         """
         Parameters
         ----------
@@ -28,6 +29,7 @@ class ProjectMetadata:
         self.files: List[ProjectFile] = files
         self.ignore: List[str] = [] if ignore is None else ignore
         self.overwrite: List[str] = [] if overwrite is None else overwrite
+        self.extra: DictObject = {} if extra is None else extra
 
     def setup(self, root_dir: str) -> bool:
         """Sets up the project for usage.
@@ -127,8 +129,12 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
     def encode(self, obj: ProjectMetadata) -> DictObject:
         dict_obj: DictObject = {}
         dict_obj['files'] = list(map(lambda file: file.codec().encode(file), obj.files))
-        dict_obj['ignore'] = obj.ignore
-        dict_obj['overwrite'] = obj.overwrite
+        if obj.ignore:
+            dict_obj['ignore'] = obj.ignore
+        if obj.overwrite:
+            dict_obj['overwrite'] = obj.overwrite
+        if obj.extra:
+            dict_obj['extra'] = obj.extra
         return dict_obj
 
     def __decode_file(self, file: DictObject) -> ProjectFile:
@@ -149,4 +155,5 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
     def decode(self, obj: DictObject) -> ProjectMetadata:
         return ProjectMetadata(list(map(self.__decode_file, obj['files'])),
             ignore = get_or_default(obj, 'ignore', ProjectMetadata),
-            overwrite = get_or_default(obj, 'overwrite', ProjectMetadata))
+            overwrite = get_or_default(obj, 'overwrite', ProjectMetadata),
+            extra = get_or_default(obj, 'extra', ProjectMetadata))
