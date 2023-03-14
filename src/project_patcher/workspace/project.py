@@ -404,11 +404,14 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working
     # Generate ignored and overwritten list
     ignore, overwrite = metadata.ignore_and_overwrite(working_dir) # Set[str], Set[str]
 
+    # Generate ignored and overwritten list
+    ignore, overwrite = metadata.ignore_and_overwrite(working_dir) # Set[str], Set[str]
+
     for subdir, _, files in os.walk(working_dir):
         for file in files:
             # Setup paths
             work_path: str = os.path.join(subdir, file)
-            rel_path: str = work_path[(len(working_dir) + 1):]
+            rel_path: str = PurePath(work_path[(len(working_dir) + 1):]).as_posix()
             clean_path: str = os.path.join(clean_dir, rel_path)
             rel_path_posix: str = PurePath(rel_path).as_posix()
 
