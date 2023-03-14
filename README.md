@@ -36,7 +36,18 @@ The `project_metadata.json` generated with each project looks like so:
             "repository": "<git_repo>", // The git repository to checkout
             "branch|tag|commit": "<branch_name>|<tag_name>|<commit_id>" // The location to checkout to (default: the default branch when cloning the repository)
         }
+    ],
+    "ignore": [
+        // A list of file patterns to ignore instead of patching if it exists.
+        "xxx"
+    ],
+    "overwrite": [
+        // A list of file patterns to overwrite instead of patching if it exists.
+        "xxx"
     ]
+    "extra": {
+        // An object containing user-defined data
+    }
 }
 ```
 
@@ -47,6 +58,14 @@ The following commands can be accessed from the command line interface:
 * `project_patcher init [--import_metadata/-I <path_or_url>]`
     * Initializes a new project to be patched either from the metadata in the current directory, an import, or provided via the builder.
     * Optional Parameters:
-        * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for
+        * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
+* `project_patcher clean [--import_metadata/-I <path_or_url>]`
+    * Initializes a clean workspace either from the metadata in the current directory, an import, or provided via the builder.
+    * Optional Parameters:
+        * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
+* `project_patcher src [--import_metadata/-I <path_or_url>]`
+    * Initializes a patched workspace either from the metadata in the current directory, an import, or provided via the builder.
+    * Optional Parameters:
+        * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
 * `project_patcher output`
     * Generates any patches from the original files and clones the new files to an output directory.
