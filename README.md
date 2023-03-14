@@ -44,7 +44,7 @@ The `project_metadata.json` generated with each project looks like so:
     "overwrite": [
         // A list of file patterns to overwrite instead of patching if it exists.
         "xxx"
-    ]
+    ],
     "extra": {
         // An object containing user-defined data
     }
