@@ -13,11 +13,6 @@ def main() -> None:
     implementation.
     """
 
-# TODO: Create clean workspace
-# TODO: Generate working directory
-# TODO: Generate patches
-# TODO: Push to output directory
-
 @main.command(name = 'init')
 @click.option(
     '--import_metadata', '-I',
