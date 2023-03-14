@@ -16,9 +16,13 @@ from project_patcher.metadata.base import ProjectMetadata
 from project_patcher.workspace.patcher import apply_patch, create_patch
 
 _PROJECT_METADATA_NAME: str = 'project_metadata.json'
-_PATCH_EXTENSION: str = 'patch'
+"""The file name of the project metadata."""
 
+_PATCH_EXTENSION: str = 'patch'
 """The extension of a patch file."""
+
+_TMP_DIR: str = '.tmp'
+"""The directory for temporary files or directories."""
 
 # TODO: Expand to read metadata inside another json object
 def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) -> ProjectMetadata:
@@ -250,6 +254,9 @@ def generate_patch(path: str, work_path: str, clean_path: str,
         Whether the operation was successfully executed.
     """
 
+    # Basic variables
+    tmp_patch_dir: str = os.path.join(_TMP_DIR, patch_dir)
+
     # Assume patches directory exists
 
     with open(work_path, mode = 'r', encoding = 'UTF-8') as work_file, \
@@ -258,10 +265,25 @@ def generate_patch(path: str, work_path: str, clean_path: str,
         if (patch_text := create_patch(clean_file.read(), work_file.read(),
                 filename = path,
                 time = time)):
-            patch_path: str = os.path.join(patch_dir,
-                os.extsep.join([path, _PATCH_EXTENSION]))
+            rel_patch_path: str = os.extsep.join([path, _PATCH_EXTENSION])
+            patch_path: str = os.path.join(patch_dir, rel_patch_path)
+
             # Create directory if necessary
             os.makedirs(os.path.dirname(patch_path), exist_ok = True)
+
+            if os.path.exists(temp_patch_path := os.path.join(tmp_patch_dir, rel_patch_path)):
+                # Read existing patch for comparison
+                patch_text_no_head: str = ''.join(patch_text.splitlines(keepends = True)[2:])
+                temp_patch_text: Optional[str] = None
+                with open(temp_patch_path, mode = 'r', encoding = 'UTF-8') as temp_patch_file:
+                    temp_patch_text: str = ''.join(temp_patch_file.readlines()[2:])
+
+                # If patches are equivalent, move file
+                if patch_text_no_head == temp_patch_text:
+                    shutil.move(temp_patch_path, patch_path)
+                    return True
+
+            # Otherwise write new patch
             with open(patch_path, mode = 'w', encoding = 'UTF-8') as patch_file:
                 patch_file.write(patch_text)
 
@@ -317,14 +339,17 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working
         Whether the operation was successfully executed.
     """
 
-    # Current time
+    # Basic variables
     time: str = str(datetime.now())
+
+    # Create temp dir (shouldn't exist)
+    os.makedirs(_TMP_DIR, exist_ok = True)
 
     # If patch directory and output exist, delete them
     if os.path.exists(out_dir) and os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
     if os.path.exists(patch_dir) and os.path.isdir(patch_dir):
-        shutil.rmtree(patch_dir)
+        shutil.move(patch_dir, _TMP_DIR)
 
     # Generate ignored and overwritten list
     ignore, overwrite = metadata.ignore_and_overwrite(working_dir) # Set[str], Set[str]
@@ -333,14 +358,15 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working
         for file in files:
             # Setup paths
             work_path: str = os.path.join(subdir, file)
-            rel_path: str = PurePath(work_path[(len(working_dir) + 1):]).as_posix()
+            rel_path: str = work_path[(len(working_dir) + 1):]
             clean_path: str = os.path.join(clean_dir, rel_path)
+            rel_path_posix: str = PurePath(rel_path).as_posix()
 
             # If clean file exists, generate patch and write
             if os.path.exists(clean_path):
-                if rel_path in ignore:
+                if rel_path_posix in ignore:
                     pass # Ignore patch generation if in relative
-                elif rel_path in overwrite:
+                elif rel_path_posix in overwrite:
                     # Copy file to output if overwrite
                     output_file(rel_path, work_path, out_dir = out_dir)
                 else:
@@ -352,4 +378,6 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working
             else:
                 output_file(rel_path, work_path, out_dir = out_dir)
 
+    # Delete temp directory afterwards
+    shutil.rmtree(_TMP_DIR)
     return True
