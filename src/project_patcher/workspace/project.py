@@ -119,7 +119,7 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
 
     with open(os.sep.join([dirpath, _PROJECT_METADATA_NAME]),
             mode = 'w', encoding = 'UTF-8') as file:
-        json.dump(METADATA_CODEC.encode(metadata), file, indent = 4)
+        print(json.dumps(METADATA_CODEC.encode(metadata), indent = 4), file = file)
 
     return metadata
 

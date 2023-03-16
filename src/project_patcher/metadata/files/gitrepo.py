@@ -20,7 +20,8 @@ class GitProjectFile(ProjectFile):
     """A project file for an Git repository."""
 
     def __init__(self, repository: str, branch: Optional[str] = None,
-            branch_type: str = 'branch', rel_dir: str = os.curdir) -> None:
+            branch_type: str = 'branch', rel_dir: str = os.curdir,
+            extra: Optional[DictObject] = None) -> None:
         """
         Parameters
         ----------
@@ -33,8 +34,10 @@ class GitProjectFile(ProjectFile):
             The name of the key holding the branch. Must be within `_VALID_BRANCH_TYPES`.
         rel_dir : str (default '.')
             The directory the project file is located.
+        extra : dict[str, Any]
+            Extra data defined by the user.
         """
-        super().__init__(rel_dir)
+        super().__init__(rel_dir, extra)
         self.repository: str = repository
         self.branch: Optional[str] = branch
         if branch_type not in _VALID_BRANCH_TYPES:
@@ -83,7 +86,8 @@ class GitProjectFileCodec(ProjectFileCodec[GitProjectFile]):
             dict_obj[obj.branch_type] = obj.branch
         return dict_obj
 
-    def decode_type(self, rel_dir: str, obj: DictObject) -> GitProjectFile:
+    def decode_type(self, rel_dir: str, extra: Optional[DictObject],
+            obj: DictObject) -> GitProjectFile:
         for branch_name in _VALID_BRANCH_TYPES: # type: str
             if branch_name in obj:
                 return GitProjectFile(
@@ -91,4 +95,4 @@ class GitProjectFileCodec(ProjectFileCodec[GitProjectFile]):
                     branch = obj[branch_name],
                     branch_type = branch_name, rel_dir = rel_dir
                 )
-        return GitProjectFile(obj['repository'], rel_dir = rel_dir)
+        return GitProjectFile(obj['repository'], rel_dir = rel_dir, extra = extra)

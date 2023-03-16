@@ -3,6 +3,7 @@ project.
 """
 
 import os
+from typing import Optional
 from project_patcher.lazy import SINGLETON
 from project_patcher.struct.codec import DictObject
 from project_patcher.metadata.file import ProjectFile, ProjectFileCodec, build_file
@@ -11,7 +12,8 @@ from project_patcher.utils import download_and_write
 class OSFProjectFile(ProjectFile):
     """A project file for an Open Science Framework repository."""
 
-    def __init__(self, project_id: str, rel_dir: str = os.curdir) -> None:
+    def __init__(self, project_id: str, rel_dir: str = os.curdir,
+            extra: Optional[DictObject] = None) -> None:
         """
         Parameters
         ----------
@@ -19,8 +21,10 @@ class OSFProjectFile(ProjectFile):
             The five character identifier of the repository.
         rel_dir : str (default '.')
             The directory the project file is located.
+        extra : dict[str, Any]
+            Extra data defined by the user.
         """
-        super().__init__(rel_dir)
+        super().__init__(rel_dir, extra)
         self.project_id: str = project_id
         self.__url: str = \
             f'https://files.osf.io/v1/resources/{project_id}/providers/osfstorage/?zip='
@@ -51,5 +55,6 @@ class OSFProjectFileCodec(ProjectFileCodec[OSFProjectFile]):
         dict_obj['id'] = obj.project_id
         return dict_obj
 
-    def decode_type(self, rel_dir: str, obj: DictObject) -> OSFProjectFile:
-        return OSFProjectFile(obj['id'], rel_dir = rel_dir)
+    def decode_type(self, rel_dir: str, extra: Optional[DictObject],
+            obj: DictObject) -> OSFProjectFile:
+        return OSFProjectFile(obj['id'], rel_dir = rel_dir, extra = extra)

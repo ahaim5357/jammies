@@ -3,7 +3,7 @@ from the metadata.
 """
 
 import os
-from typing import TypeVar, List, Callable
+from typing import TypeVar, List, Callable, Optional
 from abc import ABC, abstractmethod
 from project_patcher.lazy import SINGLETON
 from project_patcher.utils import get_default, get_or_default
@@ -14,15 +14,19 @@ class ProjectFile(ABC):
     """
 
     @abstractmethod
-    def __init__(self, rel_dir: str = os.curdir) -> None:
+    def __init__(self, rel_dir: str = os.curdir,
+            extra: Optional[DictObject] = None) -> None:
         """
         Parameters
         ----------
         rel_dir : str (default '.')
             The directory the project file is located.
+        extra : dict[str, Any]
+            Extra data defined by the user.
         """
         super().__init__()
         self.dir: str = rel_dir
+        self.extra: DictObject = {} if extra is None else extra
 
     @abstractmethod
     def codec(self) -> 'ProjectFileCodec':
@@ -99,10 +103,11 @@ class ProjectFileCodec(DictCodec[PF]):
     """
 
     def decode(self, obj: DictObject) -> PF:
-        return self.decode_type(get_or_default(obj, 'dir', ProjectFile, param = 'rel_dir'), obj)
+        return self.decode_type(get_or_default(obj, 'dir', ProjectFile, param = 'rel_dir'),
+            get_or_default(obj, 'extra', ProjectFile), obj)
 
     @abstractmethod
-    def decode_type(self, rel_dir: str, obj: DictObject) -> PF:
+    def decode_type(self, rel_dir: str, extra: Optional[DictObject], obj: DictObject) -> PF:
         """Decodes a dictionary to the specific ProjectFile type.
 
         Parameters
@@ -123,6 +128,8 @@ class ProjectFileCodec(DictCodec[PF]):
         dict_obj['type'] = SINGLETON.PROJECT_FILE_TYPES.get_key(self)
         if obj.dir != get_default(ProjectFile, 'rel_dir'):
             dict_obj['dir'] = obj.dir
+        if obj.extra:
+            dict_obj['extra'] = obj.extra
 
         return self.encode_type(obj, dict_obj)
 
