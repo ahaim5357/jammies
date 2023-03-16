@@ -21,7 +21,10 @@ The `project_metadata.json` generated with each project looks like so:
     "files": [
         {
             "type": "xxx", // Must be "osf", "url", or "git"
-            "dir": "<path>" // The directory relative to the working directory to put the file in (default: the working directory)
+            "dir": "<path>", // The directory relative to the working directory to put the file in (default: the working directory)
+            "extra": {
+                // An object containing user-defined data
+            }
         }
         {
             "type": "osf",
