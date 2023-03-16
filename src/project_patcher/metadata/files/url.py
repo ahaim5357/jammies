@@ -2,6 +2,7 @@
 """
 
 import os
+from typing import Optional
 from project_patcher.lazy import SINGLETON
 from project_patcher.struct.codec import DictObject
 from project_patcher.metadata.file import ProjectFile, ProjectFileCodec, build_file
@@ -11,7 +12,8 @@ class URLProjectFile(ProjectFile):
     """A project file for a file at a downloadable url link.
     The file will be obtained via a GET request."""
 
-    def __init__(self, url: str, rel_dir: str = os.curdir) -> None:
+    def __init__(self, url: str, rel_dir: str = os.curdir,
+            extra: Optional[DictObject] = None) -> None:
         """
         Parameters
         ----------
@@ -19,8 +21,10 @@ class URLProjectFile(ProjectFile):
             The downloadable link for the file.
         rel_dir : str (default '.')
             The directory the project file is located.
+        extra : dict[str, Any]
+            Extra data defined by the user.
         """
-        super().__init__(rel_dir)
+        super().__init__(rel_dir, extra)
         self.url: str = url
 
     def codec(self) -> 'ProjectFileCodec':
@@ -50,5 +54,6 @@ class URLProjectFileCodec(ProjectFileCodec[URLProjectFile]):
         dict_obj['url'] = obj.url
         return dict_obj
 
-    def decode_type(self, rel_dir: str, obj: DictObject) -> URLProjectFile:
-        return URLProjectFile(obj['url'], rel_dir = rel_dir)
+    def decode_type(self, rel_dir: str, extra: Optional[DictObject],
+            obj: DictObject) -> URLProjectFile:
+        return URLProjectFile(obj['url'], rel_dir = rel_dir, extra = extra)

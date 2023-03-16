@@ -25,6 +25,8 @@ class ProjectMetadata:
             The patterns for files that are ignored for patching.
         overwrite: list of str
             The patterns for files that are overwritten instead of patching.
+        extra : dict[str, Any]
+            Extra data defined by the user.
         """
         self.files: List[ProjectFile] = files
         self.ignore: List[str] = [] if ignore is None else ignore
