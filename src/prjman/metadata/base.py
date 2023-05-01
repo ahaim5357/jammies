@@ -2,7 +2,7 @@
 """
 
 import os
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Dict
 from pathlib import Path
 import fnmatch
 from prjman.lazy import SINGLETON
@@ -10,11 +10,20 @@ from prjman.metadata.file import ProjectFile
 from prjman.struct.codec import DictCodec, DictObject
 from prjman.utils import get_or_default, input_yn_default
 
+_DEFAULT_LOCATIONS: Dict[str, str] = {
+    'clean': 'clean',
+    'src': 'src',
+    'patches': 'patches',
+    'out': 'out'
+}
+"""The default locations used by the project metadata."""
+
 class ProjectMetadata:
     """Metadata information associated with the project being patched or ran."""
 
     def __init__(self, files: List[ProjectFile],
             ignore: List[str] | None = None, overwrite: List[str] | None = None,
+            location: DictObject | None = None,
             extra: DictObject | None = None) -> None:
         """
         Parameters
@@ -31,6 +40,11 @@ class ProjectMetadata:
         self.files: List[ProjectFile] = files
         self.ignore: List[str] = [] if ignore is None else ignore
         self.overwrite: List[str] = [] if overwrite is None else overwrite
+        self.location: Dict[str, str] = {} if location is None else location
+        # Add Missing Defaults
+        for key, value in _DEFAULT_LOCATIONS.items():
+            if key not in self.location:
+                self.location[key] = value
         self.extra: DictObject = {} if extra is None else extra
 
     def setup(self, root_dir: str) -> bool:
@@ -135,6 +149,15 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
             dict_obj['ignore'] = obj.ignore
         if obj.overwrite:
             dict_obj['overwrite'] = obj.overwrite
+
+        location: DictObject = {}
+        for key, value in obj.location.items():
+            # If the key does not have a default or is not the default value
+            if key not in _DEFAULT_LOCATIONS or _DEFAULT_LOCATIONS[key] != value:
+                location[key] = value
+        if obj.location:
+            dict_obj['location'] = location
+
         if obj.extra:
             dict_obj['extra'] = obj.extra
         return dict_obj
@@ -158,4 +181,5 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
         return ProjectMetadata(list(map(self.__decode_file, obj['files'])),
             ignore = get_or_default(obj, 'ignore', ProjectMetadata),
             overwrite = get_or_default(obj, 'overwrite', ProjectMetadata),
+            location = get_or_default(obj, 'location', ProjectMetadata),
             extra = get_or_default(obj, 'extra', ProjectMetadata))

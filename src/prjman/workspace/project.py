@@ -316,7 +316,6 @@ def generate_patch(path: str, work_path: str, clean_path: str,
     """
 
     # Assume patches directory exists
-
     with open(work_path, mode = 'r', encoding = 'UTF-8') as work_file, \
             open(clean_path, mode = 'r', encoding = 'UTF-8') as clean_file:
         # Generate patch file if not empty
