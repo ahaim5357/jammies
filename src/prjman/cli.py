@@ -36,10 +36,15 @@ def init(import_metadata: str | None = None, include_hidden: bool = False) -> No
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(import_loc = import_metadata)
+    clean_dir = metadata.location['clean']
+    working_dir = metadata.location['src']
+    patch_dir = metadata.location['patches']
+    out_dir = metadata.location['out']
 
     # Setup workspace
-    wspc.setup_clean(metadata)
-    wspc.setup_working(include_hidden = include_hidden)
+    wspc.setup_clean(metadata, clean_dir = clean_dir)
+    wspc.setup_working(clean_dir = clean_dir, working_dir = working_dir,
+        patch_dir = patch_dir, out_dir = out_dir, include_hidden = include_hidden)
 
     print('Initialized patching environment!')
 
@@ -50,9 +55,14 @@ def output() -> None:
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata()
+    clean_dir = metadata.location['clean']
+    working_dir = metadata.location['src']
+    patch_dir = metadata.location['patches']
+    out_dir = metadata.location['out']
 
     # Output working and generate patches
-    wspc.output_working(metadata)
+    wspc.output_working(metadata, clean_dir = clean_dir, working_dir = working_dir,
+        patch_dir = patch_dir, out_dir = out_dir)
 
     print('Generated patches and output files!')
 
@@ -71,9 +81,10 @@ def clean(import_metadata: str | None = None) -> None:
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(import_loc = import_metadata)
+    clean_dir = metadata.location['clean']
 
     # Setup workspace
-    wspc.setup_clean(metadata)
+    wspc.setup_clean(metadata, clean_dir = clean_dir)
 
     print('Setup clean workspace!')
 
@@ -92,9 +103,13 @@ def source(import_metadata: str | None = None) -> None:
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(import_loc = import_metadata)
+    working_dir = metadata.location['src']
+    patch_dir = metadata.location['patches']
+    out_dir = metadata.location['out']
 
     # Setup workspace
-    wspc.setup_clean(metadata, 'src', invalidate_cache = True)
-    wspc.setup_working_raw()
+    wspc.setup_clean(metadata, clean_dir = working_dir, invalidate_cache = True)
+    wspc.setup_working_raw(working_dir = working_dir,
+        patch_dir = patch_dir, out_dir = out_dir)
 
     print('Setup patched workspace!')
