@@ -4,10 +4,10 @@
 import os
 from typing import Set, Optional
 from git import Repo
-from project_patcher.lazy import SINGLETON
-from project_patcher.utils import get_default
-from project_patcher.struct.codec import DictObject
-from project_patcher.metadata.file import ProjectFile, ProjectFileCodec, build_file
+from prjman.lazy import SINGLETON
+from prjman.utils import get_default
+from prjman.struct.codec import DictObject
+from prjman.metadata.file import ProjectFile, ProjectFileCodec, build_file
 
 _VALID_BRANCH_TYPES: Set[str] = {
     'branch',

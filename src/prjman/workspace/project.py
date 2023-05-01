@@ -10,10 +10,10 @@ from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
 from requests import Response
-from project_patcher.singleton import METADATA_CODEC, METADATA_BUILDER
-from project_patcher.utils import download_file
-from project_patcher.metadata.base import ProjectMetadata
-from project_patcher.workspace.patcher import apply_patch, create_patch
+from prjman.singleton import METADATA_CODEC, METADATA_BUILDER
+from prjman.utils import download_file
+from prjman.metadata.base import ProjectMetadata
+from prjman.workspace.patcher import apply_patch, create_patch
 
 _PROJECT_METADATA_NAME: str = 'project_metadata.json'
 """The file name of the project metadata."""
@@ -37,7 +37,7 @@ def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) ->
     
     Returns
     -------
-    project_patcher.metadata.base.ProjectMetadata
+    prjman.metadata.base.ProjectMetadata
         The metadata for the current / to-be workspace.
     """
 
@@ -94,7 +94,7 @@ def read_metadata_from_file(path: str) -> ProjectMetadata:
 
     Returns
     -------
-    project_patcher.metadata.base.ProjectMetadata
+    prjman.metadata.base.ProjectMetadata
         The metadata for the current / to-be workspace.
     """
 
@@ -108,12 +108,12 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
     ----------
     dirpath : str
         The directory to write the project metadata to.
-    metadata : project_patcher.metadata.base.ProjectMetadata
+    metadata : prjman.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     
     Returns
     -------
-    metadata : project_patcher.metadata.base.ProjectMetadata
+    metadata : prjman.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     """
 
@@ -129,7 +129,7 @@ def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
 
     Parameters
     ----------
-    metadata : project_patcher.metadata.base.ProjectMetadata
+    metadata : prjman.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     clean_dir : str (default '_clean')
         The directory to generate the clean workspace within.
@@ -372,7 +372,7 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working
     
     Parameters
     ----------
-    metadata : project_patcher.metadata.base.ProjectMetadata
+    metadata : prjman.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     clean_dir : str (default '_clean')
         The directory containing the raw project files.

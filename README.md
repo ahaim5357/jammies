@@ -1,6 +1,6 @@
-# project_patcher
+# prjman
 
-`project_patcher` is a project constructor, diff generator, and patcher in one module to better improve and fix the reproducibility of other work.
+`prjman` is a helper for constructing, managing, and patching projects to better improve and fix the reproducibility of other work.
 
 ## Project Files
 
@@ -58,17 +58,17 @@ The `project_metadata.json` generated with each project looks like so:
 
 The following commands can be accessed from the command line interface:
 
-* `project_patcher init [--import_metadata/-I <path_or_url>]`
+* `prjman patch init [--import_metadata/-I <path_or_url>]`
     * Initializes a new project to be patched either from the metadata in the current directory, an import, or provided via the builder.
     * Optional Parameters:
         * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
-* `project_patcher clean [--import_metadata/-I <path_or_url>]`
+* `prjman patch clean [--import_metadata/-I <path_or_url>]`
     * Initializes a clean workspace either from the metadata in the current directory, an import, or provided via the builder.
     * Optional Parameters:
         * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
-* `project_patcher src [--import_metadata/-I <path_or_url>]`
+* `prjman patch src [--import_metadata/-I <path_or_url>]`
     * Initializes a patched workspace either from the metadata in the current directory, an import, or provided via the builder.
     * Optional Parameters:
         * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
-* `project_patcher output`
+* `prjman patch output`
     * Generates any patches from the original files and clones the new files to an output directory.

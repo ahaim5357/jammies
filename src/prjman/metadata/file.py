@@ -5,9 +5,9 @@ from the metadata.
 import os
 from typing import TypeVar, List, Callable, Optional
 from abc import ABC, abstractmethod
-from project_patcher.lazy import SINGLETON
-from project_patcher.utils import get_default, get_or_default
-from project_patcher.struct.codec import DictObject, DictCodec
+from prjman.lazy import SINGLETON
+from prjman.utils import get_default, get_or_default
+from prjman.struct.codec import DictObject, DictCodec
 
 class ProjectFile(ABC):
     """An abstract class containing information about a file associated with the project.

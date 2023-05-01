@@ -5,10 +5,10 @@ import os
 from typing import List, Optional, Tuple, Set
 from pathlib import Path
 import fnmatch
-from project_patcher.lazy import SINGLETON
-from project_patcher.metadata.file import ProjectFile
-from project_patcher.struct.codec import DictCodec, DictObject
-from project_patcher.utils import get_or_default
+from prjman.lazy import SINGLETON
+from prjman.metadata.file import ProjectFile
+from prjman.struct.codec import DictCodec, DictObject
+from prjman.utils import get_or_default
 
 class ProjectMetadata:
     """Metadata information associated with the project being patched or ran."""
