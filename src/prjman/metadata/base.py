@@ -2,30 +2,30 @@
 """
 
 import os
-from typing import List, Optional, Tuple, Set
+from typing import List, Tuple, Set
 from pathlib import Path
 import fnmatch
 from prjman.lazy import SINGLETON
 from prjman.metadata.file import ProjectFile
 from prjman.struct.codec import DictCodec, DictObject
-from prjman.utils import get_or_default
+from prjman.utils import get_or_default, input_yn_default
 
 class ProjectMetadata:
     """Metadata information associated with the project being patched or ran."""
 
     def __init__(self, files: List[ProjectFile],
-            ignore: Optional[List[str]] = None, overwrite: Optional[List[str]] = None,
-            extra: Optional[DictObject] = None) -> None:
+            ignore: List[str] | None = None, overwrite: List[str] | None = None,
+            extra: DictObject | None = None) -> None:
         """
         Parameters
         ----------
         files : list of `ProjectFile`s
             The files associated with the project.
-        ignore : list of str
+        ignore : list of str (default '[]')
             The patterns for files that are ignored for patching.
-        overwrite: list of str
+        overwrite: list of str (default '[]')
             The patterns for files that are overwritten instead of patching.
-        extra : dict[str, Any]
+        extra : dict[str, Any] (default '{}')
             Extra data defined by the user.
         """
         self.files: List[ProjectFile] = files
@@ -105,21 +105,21 @@ def build_metadata() -> ProjectMetadata:
     while flag:
         file_type: str = input(f"Add file ({available_file_types}): ").lower()
         files.append(SINGLETON.PROJECT_FILE_BUILDERS[file_type]())
-        flag = input('Would you like to add another file (y/n)? ').lower()[0] != 'n'
+        flag = input_yn_default('Would you like to add another file', True)
 
     # Ignore Patterns
-    flag = input('Would you like to ignore any files when patching (y/n)? ').lower()[0] != 'n'
+    flag = input_yn_default('Would you like to ignore any files when patching', False)
     ignore: List[str] = []
     while flag:
         ignore.append(input('Add pattern to ignore: '))
-        flag = input('Would you like to ignore another pattern (y/n)? ').lower()[0] != 'n'
+        flag = input_yn_default('Would you like to ignore another pattern', True)
 
     # Overwrite Patterns
-    flag = input('Would you like to overwrite any files when patching (y/n)? ').lower()[0] != 'n'
+    flag = input_yn_default('Would you like to overwrite any files when patching', False)
     overwrite: List[str] = []
     while flag:
         overwrite.append(input('Add pattern to overwrite: '))
-        flag = input('Would you like to overwrite another pattern (y/n)? ').lower()[0] != 'n'
+        flag = input_yn_default('Would you like to overwrite another pattern', True)
 
     # Create metadata
     return ProjectMetadata(files, ignore = ignore, overwrite = overwrite)

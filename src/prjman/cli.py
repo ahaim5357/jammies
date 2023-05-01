@@ -1,7 +1,6 @@
 """A script containing the methods needed for command line integration.
 """
 
-from typing import Optional
 import click
 import prjman.workspace.project as wspc
 from prjman.metadata.base import ProjectMetadata
@@ -29,7 +28,7 @@ def patch() -> None:
     is_flag = True,
     help = 'When added, copies hidden files to the working directory.'
 )
-def init(import_metadata: Optional[str] = None, include_hidden: bool = False) -> None:
+def init(import_metadata: str | None = None, include_hidden: bool = False) -> None:
     """Initializes a new project or an existing project from the
     metadata JSON in the executing directory, an import, or from
     the metadata builder if neither are present.
@@ -64,7 +63,7 @@ def output() -> None:
     default = None,
     help = 'A path or URL to the metadata JSON.'
 )
-def clean(import_metadata: Optional[str] = None) -> None:
+def clean(import_metadata: str | None = None) -> None:
     """Initializes a clean workspace from the
     metadata JSON in the executing directory, an import, or from
     the metadata builder if neither are present.
@@ -85,7 +84,7 @@ def clean(import_metadata: Optional[str] = None) -> None:
     default = None,
     help = 'A path or URL to the metadata JSON.'
 )
-def source(import_metadata: Optional[str] = None) -> None:
+def source(import_metadata: str | None = None) -> None:
     """Initializes a patched workspace from the
     metadata JSON in the executing directory, an import, or from
     the metadata builder if neither are present.

@@ -3,10 +3,10 @@ from the metadata.
 """
 
 import os
-from typing import TypeVar, List, Callable, Optional
+from typing import TypeVar, List, Callable
 from abc import ABC, abstractmethod
 from prjman.lazy import SINGLETON
-from prjman.utils import get_default, get_or_default
+from prjman.utils import get_default, get_or_default, input_with_default
 from prjman.struct.codec import DictObject, DictCodec
 
 class ProjectFile(ABC):
@@ -14,17 +14,20 @@ class ProjectFile(ABC):
     """
 
     @abstractmethod
-    def __init__(self, rel_dir: str = os.curdir,
-            extra: Optional[DictObject] = None) -> None:
+    def __init__(self, name: str = "", rel_dir: str = os.curdir,
+            extra: DictObject | None = None) -> None:
         """
         Parameters
         ----------
+        name : str (default '')
+            The name of the project file.
         rel_dir : str (default '.')
             The directory the project file is located.
         extra : dict[str, Any]
             Extra data defined by the user.
         """
         super().__init__()
+        self.name: str = name
         self.dir: str = rel_dir
         self.extra: DictObject = {} if extra is None else extra
 
@@ -73,14 +76,14 @@ class ProjectFile(ABC):
 PF = TypeVar('PF', bound = ProjectFile)
 """The type of the project file."""
 
-def build_file(callback: Callable[[str], PF]) -> PF:
+def build_file(callback: Callable[[DictObject], PF]) -> PF:
     """Builds a ProjectFile from user input based on the
     passed in callback.
     
     Parameters
     ----------
-    callback : (str) -> ProjectFile
-        A function that takes in the root directory of the ProjectFile
+    callback : (kwargs) -> ProjectFile
+        A function that takes in the arguments of the ProjectFile
         and returns the completed ProjectFile.
     
     Returns
@@ -88,10 +91,11 @@ def build_file(callback: Callable[[str], PF]) -> PF:
     ProjectFile
         The built project file.
     """
-    def_rel_dir: str = get_default(ProjectFile, 'rel_dir')
-    rel_dir: str = \
-        input(f"Directory to extract to (default '{def_rel_dir}'): ")
-    return callback(rel_dir if rel_dir else def_rel_dir)
+    kwargs: DictObject = {
+        "name": input_with_default(ProjectFile, 'name', 'Name of the project file'),
+        "rel_dir": input_with_default(ProjectFile, 'rel_dir', 'Directory to extract to')
+    }
+    return callback(kwargs)
 
 class ProjectFileCodec(DictCodec[PF]):
     """An abstract, generic encoder and decoder between a dictionary and a ProjectFile.
@@ -103,17 +107,18 @@ class ProjectFileCodec(DictCodec[PF]):
     """
 
     def decode(self, obj: DictObject) -> PF:
-        return self.decode_type(get_or_default(obj, 'dir', ProjectFile, param = 'rel_dir'),
-            get_or_default(obj, 'extra', ProjectFile), obj)
+        return self.decode_type(obj,
+            name = get_or_default(obj, 'name', ProjectFile),
+            rel_dir = get_or_default(obj, 'dir', ProjectFile, param = 'rel_dir'),
+            extra = get_or_default(obj, 'extra', ProjectFile)
+        )
 
     @abstractmethod
-    def decode_type(self, rel_dir: str, extra: Optional[DictObject], obj: DictObject) -> PF:
+    def decode_type(self, obj: DictObject, **kwargs: DictObject) -> PF:
         """Decodes a dictionary to the specific ProjectFile type.
 
         Parameters
         ----------
-        rel_dir : str
-            The directory the ProjectFile is located.
         obj : Dict[str, Any]
             The dictionary containing the data for the ProjectFile.
 
@@ -126,6 +131,8 @@ class ProjectFileCodec(DictCodec[PF]):
     def encode(self, obj: PF) -> DictObject:
         dict_obj: DictObject = {}
         dict_obj['type'] = SINGLETON.PROJECT_FILE_TYPES.get_key(self)
+        if obj.name:
+            dict_obj['name'] = obj.name
         if obj.dir != get_default(ProjectFile, 'rel_dir'):
             dict_obj['dir'] = obj.dir
         if obj.extra:

@@ -2,8 +2,6 @@
 project.
 """
 
-import os
-from typing import Optional
 from prjman.lazy import SINGLETON
 from prjman.struct.codec import DictObject
 from prjman.metadata.file import ProjectFile, ProjectFileCodec, build_file
@@ -12,19 +10,14 @@ from prjman.utils import download_and_write
 class OSFProjectFile(ProjectFile):
     """A project file for an Open Science Framework repository."""
 
-    def __init__(self, project_id: str, rel_dir: str = os.curdir,
-            extra: Optional[DictObject] = None) -> None:
+    def __init__(self, project_id: str, **kwargs: DictObject) -> None:
         """
         Parameters
         ----------
         project_id : str
             The five character identifier of the repository.
-        rel_dir : str (default '.')
-            The directory the project file is located.
-        extra : dict[str, Any]
-            Extra data defined by the user.
         """
-        super().__init__(rel_dir, extra)
+        super().__init__(**kwargs)
         self.project_id: str = project_id
         self.__url: str = \
             f'https://files.osf.io/v1/resources/{project_id}/providers/osfstorage/?zip='
@@ -45,7 +38,7 @@ def build_osf() -> OSFProjectFile:
         The built project file.
     """
     project_id: str = input('OSF Project Id: ')
-    return build_file(lambda rel_dir: OSFProjectFile(project_id, rel_dir = rel_dir))
+    return build_file(lambda kwargs: OSFProjectFile(project_id, **kwargs))
 
 class OSFProjectFileCodec(ProjectFileCodec[OSFProjectFile]):
     """A codec for encoding and decoding an OSFProjectFile.
@@ -55,6 +48,5 @@ class OSFProjectFileCodec(ProjectFileCodec[OSFProjectFile]):
         dict_obj['id'] = obj.project_id
         return dict_obj
 
-    def decode_type(self, rel_dir: str, extra: Optional[DictObject],
-            obj: DictObject) -> OSFProjectFile:
-        return OSFProjectFile(obj['id'], rel_dir = rel_dir, extra = extra)
+    def decode_type(self, obj: DictObject, **kwargs: DictObject) -> OSFProjectFile:
+        return OSFProjectFile(obj['id'], **kwargs)

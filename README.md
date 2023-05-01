@@ -72,3 +72,7 @@ The following commands can be accessed from the command line interface:
         * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
 * `prjman patch output`
     * Generates any patches from the original files and clones the new files to an output directory.
+
+## Contributing
+
+`prjmn` is built for Python 3.8+ while being developed on 3.11.
