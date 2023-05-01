@@ -3,17 +3,21 @@
 
 from typing import Optional
 import click
-import project_patcher.workspace.project as wspc
-from project_patcher.metadata.base import ProjectMetadata
+import prjman.workspace.project as wspc
+from prjman.metadata.base import ProjectMetadata
 
 @click.group()
 def main() -> None:
-    """A command line interface to construct projects,
-    generated diffs, and patch multiple files in one
-    implementation.
+    """A command line interface to construct,
+    manage, and patch projects.
     """
 
-@main.command(name = 'init')
+@main.group()
+def patch() -> None:
+    """Helpers to patch an existing project.
+    """
+
+@patch.command(name = 'init')
 @click.option(
     '--import_metadata', '-I',
     type = str,
@@ -40,7 +44,7 @@ def init(import_metadata: Optional[str] = None, include_hidden: bool = False) ->
 
     print('Initialized patching environment!')
 
-@main.command(name = 'output')
+@patch.command(name = 'output')
 def output() -> None:
     """Generates any patches and clones the new files to an output
     directory."""
@@ -53,7 +57,7 @@ def output() -> None:
 
     print('Generated patches and output files!')
 
-@main.command(name = 'clean')
+@patch.command(name = 'clean')
 @click.option(
     '--import_metadata', '-I',
     type = str,
@@ -74,7 +78,7 @@ def clean(import_metadata: Optional[str] = None) -> None:
 
     print('Setup clean workspace!')
 
-@main.command(name = 'src')
+@patch.command(name = 'src')
 @click.option(
     '--import_metadata', '-I',
     type = str,

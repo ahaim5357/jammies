@@ -42,5 +42,5 @@ def _lazy_import(name: str) -> ModuleType:
     _LAZY_IMPORTS[name] = module
     return module
 
-SINGLETON: ModuleType = _lazy_import('project_patcher.singleton')
-"""The project_patcher.singleton module added as a lazy import."""
+SINGLETON: ModuleType = _lazy_import('prjman.singleton')
+"""The prjman.singleton module added as a lazy import."""

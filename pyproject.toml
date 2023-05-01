@@ -6,12 +6,12 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "project_patcher"
-version = "0.3.0"
+name = "prjman"
+version = "0.4.0.dev1"
 authors = [
     { name = "Aaron Haim", email = "ahaim@ashwork.net" }
 ]
-description = "A project constructor, diff generator, and patcher rolled into one"
+description = "A helper for constructing, managing, and patching projects"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.7"
@@ -26,10 +26,10 @@ issue_tracker = "https://github.com/ahaim5357/project-patcher/issues"
 
 [project.optional-dependencies]
 git = ["GitPython>=3.1"]
-all = ["project_patcher[git]"]
+all = ["prjman[git]"]
 
 [tools.setuptools.packages.find]
 where = ["src"]
 
 [project.scripts]
-project_patcher = "project_patcher.cli:main"
+prjman = "prjman.cli:main"

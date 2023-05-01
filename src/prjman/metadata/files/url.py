@@ -3,10 +3,10 @@
 
 import os
 from typing import Optional
-from project_patcher.lazy import SINGLETON
-from project_patcher.struct.codec import DictObject
-from project_patcher.metadata.file import ProjectFile, ProjectFileCodec, build_file
-from project_patcher.utils import download_and_write
+from prjman.lazy import SINGLETON
+from prjman.struct.codec import DictObject
+from prjman.metadata.file import ProjectFile, ProjectFileCodec, build_file
+from prjman.utils import download_and_write
 
 class URLProjectFile(ProjectFile):
     """A project file for a file at a downloadable url link.
