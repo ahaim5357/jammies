@@ -122,7 +122,7 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
 
     return metadata
 
-def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
+def setup_clean(metadata: ProjectMetadata, clean_dir: str = 'clean',
         invalidate_cache: bool = False) -> bool:
     """Generates a clean workspace from the project metadata.
 
@@ -130,7 +130,7 @@ def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
     ----------
     metadata : prjman.metadata.base.ProjectMetadata
         The metadata for the current workspace.
-    clean_dir : str (default '_clean')
+    clean_dir : str (default 'clean')
         The directory to generate the clean workspace within.
     invalidate_cache : bool (default False)
         When `True`, removes any cached files from the clean workspace.
@@ -150,14 +150,14 @@ def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
     return True if os.path.exists(clean_dir) and os.path.isdir(clean_dir) \
         else metadata.setup(clean_dir)
 
-def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> bool:
+def apply_patches(working_dir: str = 'src', patch_dir: str = 'patches') -> bool:
     """Applies patches to the working directory.
 
     Parameters
     ----------
-    working_dir : str (default '_src')
+    working_dir : str (default 'src')
         The directory containing the clean workspace to-be patched. 
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
     
     Returns
@@ -185,20 +185,20 @@ def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> boo
 
     return True
 
-def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
-        patch_dir: str = '_patches', out_dir: str = '_out', include_hidden: bool = False) -> bool:
+def setup_working(clean_dir: str = 'clean', working_dir: str = 'src',
+        patch_dir: str = 'patches', out_dir: str = 'out', include_hidden: bool = False) -> bool:
     """Generates a working directory from the project metadata and any additional
     files and patches.
 
     Parameters
     ----------
-    clean_dir : str (default '_clean')
+    clean_dir : str (default 'clean')
         The directory containing the raw project files.
-    working_dir : str (default '_src')
+    working_dir : str (default 'src')
         The directory containing the clean workspace to-be patched. 
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
-    out_dir : str (default '_out')
+    out_dir : str (default 'out')
         The directory containing additional files for the workspace.
     include_hidden : bool (default False)
         When `True`, copies hidden files to the working directory.
@@ -226,18 +226,18 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
     return setup_working_raw(working_dir = working_dir, patch_dir = patch_dir,
         out_dir = out_dir)
 
-def setup_working_raw(working_dir: str = '_src', patch_dir: str = '_patches',
-        out_dir: str = '_out') -> bool:
+def setup_working_raw(working_dir: str = 'src', patch_dir: str = 'patches',
+        out_dir: str = 'out') -> bool:
     """Generates a working directory from the project metadata and any additional
     files and patches. Performs no validation checks.
 
     Parameters
     ----------
-    working_dir : str (default '_src')
+    working_dir : str (default 'src')
         The directory containing the clean workspace to-be patched. 
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
-    out_dir : str (default '_out')
+    out_dir : str (default 'out')
         The directory containing additional files for the workspace.
     
     Returns
@@ -256,7 +256,7 @@ def setup_working_raw(working_dir: str = '_src', patch_dir: str = '_patches',
         else True
 
 def check_existing_patch(rel_patch_path: str, patch_path: str,
-        patch_text: str, patch_dir: str = '_patches') -> bool:
+        patch_text: str, patch_dir: str = 'patches') -> bool:
     """Returns whether there is an equivalent, existing patch and copies it from the
     temporary directory.
 
@@ -268,7 +268,7 @@ def check_existing_patch(rel_patch_path: str, patch_path: str,
         The path to the patch output location.
     patch_text : str
         The text of the patch file.
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
 
     Returns
@@ -293,7 +293,7 @@ def check_existing_patch(rel_patch_path: str, patch_path: str,
     return False
 
 def generate_patch(path: str, work_path: str, clean_path: str,
-        patch_dir: str = '_patches', time: str = str(datetime.now())) -> bool:
+        patch_dir: str = 'patches', time: str = str(datetime.now())) -> bool:
     """Generates a patch between two files if they are not equal.
 
     Parameters
@@ -304,7 +304,7 @@ def generate_patch(path: str, work_path: str, clean_path: str,
         The path of the file in the working directory.
     clean_path : str
         The path of the file in the clean directory.
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
     time : str  (default `datetime.datetime.now`)
         The time the patch was generated.
@@ -338,7 +338,7 @@ def generate_patch(path: str, work_path: str, clean_path: str,
 
     return True
 
-def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
+def output_file(path: str, work_path: str, out_dir: str = 'out') -> bool:
     """Copies an additional file for the workspace to the output directory.
     
     Parameters
@@ -347,7 +347,7 @@ def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
         The relative path of the file.
     work_path : str
         The path of the file in the working directory.
-    out_dir : str (default '_out')
+    out_dir : str (default 'out')
         The directory containing additional files for the workspace.
 
     Returns
@@ -365,21 +365,21 @@ def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
 
     return True
 
-def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working_dir: str = '_src',
-        patch_dir: str = '_patches', out_dir: str = '_out') -> bool:
+def output_working(metadata: ProjectMetadata, clean_dir: str = 'clean', working_dir: str = 'src',
+        patch_dir: str = 'patches', out_dir: str = 'out') -> bool:
     """Generates the patches and copies any additional files for construction.
     
     Parameters
     ----------
     metadata : prjman.metadata.base.ProjectMetadata
         The metadata for the current workspace.
-    clean_dir : str (default '_clean')
+    clean_dir : str (default 'clean')
         The directory containing the raw project files.
-    working_dir : str (default '_src')
+    working_dir : str (default 'src')
         The directory containing the clean workspace to-be patched. 
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
-    out_dir : str (default '_out')
+    out_dir : str (default 'out')
         The directory containing additional files for the workspace.
 
     Returns
