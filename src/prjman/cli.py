@@ -94,7 +94,7 @@ def source(import_metadata: str | None = None) -> None:
     metadata: ProjectMetadata = wspc.read_metadata(import_loc = import_metadata)
 
     # Setup workspace
-    wspc.setup_clean(metadata, '_src', invalidate_cache = True)
+    wspc.setup_clean(metadata, 'src', invalidate_cache = True)
     wspc.setup_working_raw()
 
     print('Setup patched workspace!')
