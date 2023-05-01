@@ -1,11 +1,10 @@
 """A script obtaining a project file from a git repository.
 """
 
-import os
-from typing import Set, Optional
+from typing import Set
 from git import Repo
 from prjman.lazy import SINGLETON
-from prjman.utils import get_default
+from prjman.utils import get_default, input_with_default, input_yn_default
 from prjman.struct.codec import DictObject
 from prjman.metadata.file import ProjectFile, ProjectFileCodec, build_file
 
@@ -19,27 +18,22 @@ _VALID_BRANCH_TYPES: Set[str] = {
 class GitProjectFile(ProjectFile):
     """A project file for an Git repository."""
 
-    def __init__(self, repository: str, branch: Optional[str] = None,
-            branch_type: str = 'branch', rel_dir: str = os.curdir,
-            extra: Optional[DictObject] = None) -> None:
+    def __init__(self, repository: str, branch_type: str = 'branch',
+            branch: str | None = None, **kwargs: DictObject) -> None:
         """
         Parameters
         ----------
         repository : str
             The Git link for the repository location.
+        branch_type : str (default 'branch')
+            The name of the key holding the branch. Must be within `_VALID_BRANCH_TYPES`.
         branch : str | None (default None)
             The name of the checkout location. If `None`, the default checkout
             location will be used.
-        branch_type : str (default 'branch')
-            The name of the key holding the branch. Must be within `_VALID_BRANCH_TYPES`.
-        rel_dir : str (default '.')
-            The directory the project file is located.
-        extra : dict[str, Any]
-            Extra data defined by the user.
         """
-        super().__init__(rel_dir, extra)
+        super().__init__(**kwargs)
         self.repository: str = repository
-        self.branch: Optional[str] = branch
+        self.branch: str | None = branch
         if branch_type not in _VALID_BRANCH_TYPES:
             raise ValueError(f'\"{branch_type}\" is not a valid branch type. \
                 Specify one of the following: {", ".join(_VALID_BRANCH_TYPES)}')
@@ -66,14 +60,15 @@ def build_git() -> GitProjectFile:
         The built project file.
     """
     repository: str = input('Git Repository: ')
-    def_branch_type: str = get_default(GitProjectFile, 'branch')
-    branch_type: str = \
-        input(f"{', '.join(_VALID_BRANCH_TYPES)} (default '{def_branch_type}'): ").lower()
-    branch: Optional[str] = input(f"{branch_type} (default branch): ")
-    if not branch:
-        branch = None
-    return build_file(lambda rel_dir:
-        GitProjectFile(repository, branch = branch, branch_type = branch_type, rel_dir = rel_dir)
+    if input_yn_default('Would you like to specify a checkout location', True):
+        branch_type: str = input_with_default(
+            GitProjectFile, 'branch_type', ', '.join(_VALID_BRANCH_TYPES))
+        branch: str | None = input(f"{branch_type.capitalize()} id: ")
+    else:
+        branch_type: str = get_default(GitProjectFile, 'branch_type')
+        branch: str | None = None
+    return build_file(lambda kwargs:
+        GitProjectFile(repository, branch = branch, branch_type = branch_type, **kwargs)
     )
 
 class GitProjectFileCodec(ProjectFileCodec[GitProjectFile]):
@@ -86,13 +81,13 @@ class GitProjectFileCodec(ProjectFileCodec[GitProjectFile]):
             dict_obj[obj.branch_type] = obj.branch
         return dict_obj
 
-    def decode_type(self, rel_dir: str, extra: Optional[DictObject],
-            obj: DictObject) -> GitProjectFile:
+    def decode_type(self, obj: DictObject, **kwargs: DictObject) -> GitProjectFile:
         for branch_name in _VALID_BRANCH_TYPES: # type: str
             if branch_name in obj:
                 return GitProjectFile(
                     obj['repository'],
                     branch = obj[branch_name],
-                    branch_type = branch_name, rel_dir = rel_dir
+                    branch_type = branch_name,
+                    **kwargs
                 )
-        return GitProjectFile(obj['repository'], rel_dir = rel_dir, extra = extra)
+        return GitProjectFile(obj['repository'], **kwargs)

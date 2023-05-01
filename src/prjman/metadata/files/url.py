@@ -1,8 +1,6 @@
 """A script obtaining a project file from a download url.
 """
 
-import os
-from typing import Optional
 from prjman.lazy import SINGLETON
 from prjman.struct.codec import DictObject
 from prjman.metadata.file import ProjectFile, ProjectFileCodec, build_file
@@ -12,19 +10,14 @@ class URLProjectFile(ProjectFile):
     """A project file for a file at a downloadable url link.
     The file will be obtained via a GET request."""
 
-    def __init__(self, url: str, rel_dir: str = os.curdir,
-            extra: Optional[DictObject] = None) -> None:
+    def __init__(self, url: str, **kwargs) -> None:
         """
         Parameters
         ----------
         url : str
             The downloadable link for the file.
-        rel_dir : str (default '.')
-            The directory the project file is located.
-        extra : dict[str, Any]
-            Extra data defined by the user.
         """
-        super().__init__(rel_dir, extra)
+        super().__init__(**kwargs)
         self.url: str = url
 
     def codec(self) -> 'ProjectFileCodec':
@@ -43,8 +36,8 @@ def build_url() -> URLProjectFile:
     URLProjectFile
         The built project file.
     """
-    url: str = input('Direct URL Link: ')
-    return build_file(lambda rel_dir: URLProjectFile(url, rel_dir = rel_dir))
+    url: str = input('Direct URL: ')
+    return build_file(lambda kwargs: URLProjectFile(url, **kwargs))
 
 class URLProjectFileCodec(ProjectFileCodec[URLProjectFile]):
     """A codec for encoding and decoding an URLProjectFile.
@@ -54,6 +47,5 @@ class URLProjectFileCodec(ProjectFileCodec[URLProjectFile]):
         dict_obj['url'] = obj.url
         return dict_obj
 
-    def decode_type(self, rel_dir: str, extra: Optional[DictObject],
-            obj: DictObject) -> URLProjectFile:
-        return URLProjectFile(obj['url'], rel_dir = rel_dir, extra = extra)
+    def decode_type(self, obj: DictObject, **kwargs: DictObject) -> URLProjectFile:
+        return URLProjectFile(obj['url'], **kwargs)

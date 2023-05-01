@@ -6,14 +6,14 @@ import os
 import re
 from importlib.util import find_spec
 import inspect
-from typing import Optional, Any, Dict, Callable, Union
+from typing import Any, Dict, Callable, TypeVar
 from io import IOBase, BytesIO
 from uuid import uuid4
 from mimetypes import guess_extension
 from zipfile import ZipFile
 import requests
 
-def get_default(func: Callable[..., Any], param: str) -> Optional[Any]:
+def get_default(func: Callable[..., Any], param: str) -> Any | None:
     """Gets the default value of a function parameter, or `None` if not applicable.
     
     Parameters
@@ -32,7 +32,7 @@ def get_default(func: Callable[..., Any], param: str) -> Optional[Any]:
     return None if param_sig.default is inspect.Parameter.empty else param_sig.default
 
 def get_or_default(dict_obj: Dict[str, Any], key: str, func: Callable[..., Any],
-        param: Optional[str] = None) -> Optional[Any]:
+        param: str | None = None) -> Any | None:
     """Gets the value within a dictionary, or the default from the function if none is specified.
 
     Parameters
@@ -56,6 +56,62 @@ def get_or_default(dict_obj: Dict[str, Any], key: str, func: Callable[..., Any],
 
     return dict_obj[key] if key in dict_obj else get_default(func, param)
 
+I = TypeVar('I')
+"""The type of the input."""
+
+def input_with_default(func: Callable[..., Any], param: str, text: str) -> I:
+    """Read a string from standard input and defaults if no value is specified.
+    
+    Parameters
+    ----------
+    func : Callable[..., Any]
+        The function to check.
+    param : str
+        The name of the parameter.
+    text : str
+        The text to display for input.
+
+    Returns
+    -------
+    Any
+        The input, or the default when not specified.
+    """
+    def_val: I = get_default(func, param)
+    val: I = input(f"{text} (default '{def_val}'): ")
+    return val if val else def_val
+
+def input_yn_default(text: str, yes_or_no: bool) -> bool:
+    """Accepts an input of a yes / no answer which defaults to the
+    specified value.
+
+    Parameters
+    ----------
+    text: str
+        The text to display for input.
+    yes_or_no: bool
+        When `True`, the input will default to 'yes'.
+    
+    Returns
+    -------
+    bool
+        `True` if the input said 'yes'.
+    """
+    def cap_when_true(text: str, cap: bool) -> str:
+        return text.capitalize() if cap else text
+
+    input_string: str = f"{text} ({cap_when_true('y', yes_or_no)}" \
+        + f"/{cap_when_true('n', not yes_or_no)})? "
+
+    while True:
+        if yn_input := input(input_string):
+            if (yn := yn_input.lower()[0]) in ['y', 'n']:
+                return yn != 'n'
+            else:
+                print('Answer provided was not y/n, please input y/n.')
+                continue
+        else:
+            return yes_or_no
+
 def has_module(name: str) -> bool:
     """Checks whether the module is currently loaded or can be added to the current workspace.
 
@@ -71,7 +127,7 @@ def has_module(name: str) -> bool:
     """
     return (name in sys.modules) or (find_spec(name) is not None)
 
-def unzip(file: Union[str, IOBase], out_dir: str = os.curdir) -> None:
+def unzip(file: str | IOBase, out_dir: str = os.curdir) -> None:
     """Unzips the file or stream to the specified directory.
 
     Parameters
@@ -126,7 +182,7 @@ def download_file(url: str, handler: Callable[[requests.Response, str], bool],
             return False
 
         # Get filename
-        filename: Optional[str] = None
+        filename: str | None = None
 
         ## Lookup filename from content disposition if present
         if _CONTENT_DISPOSITION in response.headers:
@@ -146,7 +202,7 @@ def download_file(url: str, handler: Callable[[requests.Response, str], bool],
             if _CONTENT_TYPE in response.headers:
                 if (ext := guess_extension(
                         response.headers[_CONTENT_TYPE].partition(';')[0].strip()
-                    )) is not None: # ext: Optional[str]
+                    )) is not None: # ext: str | None
                     filename += ext
 
         # Handle the result of the downloaded file

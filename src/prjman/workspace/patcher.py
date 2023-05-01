@@ -7,7 +7,7 @@ between two blocks of text.
 
 import re
 from difflib import unified_diff
-from typing import Iterator, List, Optional
+from typing import Iterator, List
 from datetime import datetime
 
 _NO_EOL: str = '\\ No newline at end of file'
@@ -90,7 +90,7 @@ def apply_patch(text: str, patch: str, revert: bool = False) -> str:
     # Apply patches as long as there are still patch lines left
     while pidx < len(patch):
         # Get header
-        header: Optional[re.Match[str]] = _HUNK_HEADER.match(patch[pidx])
+        header: re.Match[str] | None = _HUNK_HEADER.match(patch[pidx])
         if not header: # If there is no hunk header, throw an exception
             raise PatchError(f'No header found for new hunk on line {pidx}')
 

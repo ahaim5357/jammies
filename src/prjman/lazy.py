@@ -3,7 +3,7 @@ class."""
 
 import sys
 from types import ModuleType
-from typing import Optional, Dict
+from typing import Dict
 from importlib.machinery import ModuleSpec
 from importlib.util import find_spec, LazyLoader, module_from_spec
 
@@ -33,7 +33,7 @@ def _lazy_import(name: str) -> ModuleType:
         return _LAZY_IMPORTS[name]
 
     # Otherwise, make import lazy and return module
-    spec: Optional[ModuleSpec] = find_spec(name)
+    spec: ModuleSpec | None = find_spec(name)
     loader: LazyLoader = LazyLoader(spec.loader)
     spec.loader = loader
     module: ModuleType = module_from_spec(spec)

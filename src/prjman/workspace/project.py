@@ -7,7 +7,6 @@ from pathlib import PurePath
 import shutil
 import json
 from datetime import datetime
-from typing import Optional
 from urllib.parse import urlparse
 from requests import Response
 from prjman.singleton import METADATA_CODEC, METADATA_BUILDER
@@ -25,7 +24,7 @@ _TMP_DIR: str = '.tmp'
 """The directory for temporary files or directories."""
 
 # TODO: Expand to read metadata inside another json object
-def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) -> ProjectMetadata:
+def read_metadata(dirpath: str = os.curdir, import_loc: str | None = None) -> ProjectMetadata:
     """Creates or reads project metadata for the current / to-be workspace.
 
     Parameters
@@ -282,7 +281,7 @@ def check_existing_patch(rel_patch_path: str, patch_path: str,
             os.path.join(os.path.join(_TMP_DIR, patch_dir), rel_patch_path)):
         # Read existing patch for comparison
         patch_text_no_head: str = ''.join(patch_text.splitlines(keepends = True)[2:])
-        temp_patch_text: Optional[str] = None
+        temp_patch_text: str | None = None
         with open(temp_patch_path, mode = 'r', encoding = 'UTF-8') as temp_patch_file:
             temp_patch_text: str = ''.join(temp_patch_file.readlines()[2:])
 
