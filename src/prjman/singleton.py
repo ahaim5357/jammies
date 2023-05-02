@@ -4,11 +4,11 @@ objects used within this package.
 
 from typing import Set, Callable
 from prjman.struct.registry import Registry
-from prjman.metadata.file import ProjectFileCodec, ProjectFile
-from prjman.metadata.base import ProjectMetadataCodec, ProjectMetadata, build_metadata
+from prjman.meta.file import ProjectFileCodec, ProjectFile
+from prjman.metadata import ProjectMetadataCodec, ProjectMetadata, build_metadata
 from prjman.utils import has_module
-from prjman.metadata.files.osf import OSFProjectFileCodec, build_osf
-from prjman.metadata.files.url import URLProjectFileCodec, build_url
+from prjman.meta.files.osf import OSFProjectFileCodec, build_osf
+from prjman.meta.files.url import URLProjectFileCodec, build_url
 
 # Add registries
 
@@ -39,7 +39,7 @@ PROJECT_FILE_TYPES['url'] = URL_FILE_CODEC
 PROJECT_FILE_BUILDERS['url'] = build_url
 
 if 'git' in OPTIONAL_DEPENDENCIES:
-    from prjman.metadata.files.gitrepo import GitProjectFileCodec, build_git
+    from prjman.meta.files.gitrepo import GitProjectFileCodec, build_git
 
     GIT_FILE_CODEC: GitProjectFileCodec = GitProjectFileCodec()
     """The codec for :class:`prjman.metadata.files.git.GitProjectFile`s."""
