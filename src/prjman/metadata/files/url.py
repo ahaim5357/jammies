@@ -1,7 +1,7 @@
 """A script obtaining a project file from a download url.
 """
 
-from prjman.lazy import SINGLETON
+from prjman.module import SINGLETON
 from prjman.struct.codec import DictObject
 from prjman.metadata.file import ProjectFile, ProjectFileCodec, build_file
 from prjman.utils import download_and_write
