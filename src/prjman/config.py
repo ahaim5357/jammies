@@ -8,6 +8,7 @@ from platformdirs import site_config_dir, user_config_dir
 from tomlkit import table, document, comment, TOMLDocument, load, dump, boolean
 from tomlkit.items import Table
 from prjman.struct.codec import DictObject
+from prjman.module import dynamic_import
 
 _ENV_VAR: str = 'PRJMAN_CONFIG_DIR'
 """The environment variable pointing to the config directory."""
@@ -243,6 +244,51 @@ class PrjmanConfig:
         setter(self)
         if save:
             self.write_config()
+
+    def load_dynamic_method(self, module_type: str, module_method: str) -> Callable[..., bool]:
+        """Loads a script relative to the module type's directory in the
+        project configurations. If the file is present, the module is dynamically
+        loaded and provides a corresponding method, which returns true on successful
+        operation. If the module cannot be found, then an failing method will be
+        returned instead.
+
+        Parameters
+        ----------
+        module_type : str
+            The type of module being dynamically imported.
+        module_method : str
+            The name of the module and method to import, formatted as '<module>:<method>'.
+
+        Returns
+        -------
+        (...) -> bool
+            The method loaded by the dynamic importer.
+        """
+        # Separate module from method and get relative path
+        module, method = tuple(module_method.split(':'))
+        rel_path: str = f'{os.sep.join([module_type] + module_method.split("."))}.py'
+        module_path: str | None = None
+
+        # Find module path
+        if (abs_path := _project_config(self.dirpath, rel_path)) and os.path.exists(abs_path):
+            module_path = abs_path
+        elif (abs_path := _env_var_config(rel_path)) and os.path.exists(abs_path):
+            module_path = abs_path
+        elif (abs_path := _site_config(rel_path)) and os.path.exists(abs_path):
+            module_path = abs_path
+        elif (abs_path := _user_config(rel_path)) and os.path.exists(abs_path):
+            module_path = abs_path
+        elif (abs_path := _global_config(rel_path)) and os.path.exists(abs_path):
+            module_path = abs_path
+
+        # Load module if present
+        if module_path:
+            # pylint: disable=C2801
+            return dynamic_import(module_type, module, module_path).__getattr__(method)
+
+        # Return empty processor
+        print(f'Could not find module {module_method}; return empty, failing processor.')
+        return lambda _: False
 
 
 def _update_dict(original: DictObject, merging: DictObject) -> DictObject:
