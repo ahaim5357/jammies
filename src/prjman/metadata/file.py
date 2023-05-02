@@ -5,7 +5,7 @@ from the metadata.
 import os
 from typing import TypeVar, List, Callable
 from abc import ABC, abstractmethod
-from prjman.lazy import SINGLETON
+from prjman.module import SINGLETON
 from prjman.utils import get_default, get_or_default, input_with_default
 from prjman.struct.codec import DictObject, DictCodec
 
