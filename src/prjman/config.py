@@ -9,14 +9,93 @@ from tomlkit import table, document, comment, TOMLDocument, load, dump, boolean
 from tomlkit.items import Table
 from prjman.struct.codec import DictObject
 
-_ENV_VAR: str = 'PRJMAN_CONFIG_FILE'
-"""The environment variable pointing to the config file"""
+_ENV_VAR: str = 'PRJMAN_CONFIG_DIR'
+"""The environment variable pointing to the config directory."""
 
 _CONFIG_DIR: str = 'prjman'
 """The config directory for prjman."""
 
 _CONFIG_FILE: str = 'prjman.toml'
 """The name of the config file."""
+
+def _project_config(dirpath: str, path : str) -> str:
+    """Returns the path relative to the project configuration.
+    
+    Parameters
+    ----------
+    dirpath : str
+        The root directory of the project.
+    path : str
+        The relativized path.
+        
+    Returns
+    -------
+    str
+        The path relative to the project configuration.
+    """
+    return os.sep.join([dirpath, path])
+
+def _env_var_config(path : str) -> str | None:
+    """Returns the path relative to the environment variable configuration.
+    
+    Parameters
+    ----------
+    path : str
+        The relativized path.
+        
+    Returns
+    -------
+    str
+        The path relative to the environment variable configuration.
+    """
+    if env_dir := os.getenv(_ENV_VAR):
+        return os.sep.join([env_dir, path])
+    return None
+
+def _site_config(path : str) -> str | None:
+    """Returns the path relative to the site configuration.
+    
+    Parameters
+    ----------
+    path : str
+        The relativized path.
+        
+    Returns
+    -------
+    str
+        The path relative to the site configuration.
+    """
+    return os.sep.join([sys.prefix, _CONFIG_DIR, path]) if sys.prefix != sys.base_prefix else None
+
+def _user_config(path : str) -> str:
+    """Returns the path relative to the user configuration.
+    
+    Parameters
+    ----------
+    path : str
+        The relativized path.
+        
+    Returns
+    -------
+    str
+        The path relative to the user configuration.
+    """
+    return user_config_dir(os.sep.join([_CONFIG_DIR, path]), appauthor = False, roaming = True)
+
+def _global_config(path : str) -> str:
+    """Returns the path relative to the global configuration.
+    
+    Parameters
+    ----------
+    path : str
+        The relativized path.
+        
+    Returns
+    -------
+    str
+        The path relative to the global configuration.
+    """
+    return site_config_dir(os.sep.join([_CONFIG_DIR, path]), appauthor = False, multipath = True)
 
 class PrjmanProjectConfig:
     """Configurations within the 'project' table."""
@@ -126,26 +205,23 @@ class PrjmanConfig:
         match scope:
             case 0:
                 # Project config
-                output_path: str = os.sep.join([self.dirpath, f'.{_CONFIG_FILE}'])
+                output_path: str = _project_config(self.dirpath, f'.{_CONFIG_FILE}')
             case 1:
                 # Env var config if present
-                if env_var := os.getenv(_ENV_VAR):
+                if env_var := _env_var_config(_CONFIG_FILE):
                     output_path: str = env_var
                 # Otherwise site config if present
-                elif sys.prefix != sys.base_prefix:
-                    output_path: str = os.sep.join([sys.prefix, _CONFIG_DIR, _CONFIG_FILE])
+                elif site_var := _site_config(_CONFIG_FILE):
+                    output_path: str = site_var
                 # Otherwise user config
                 else:
-                    output_path: str = user_config_dir(os.sep.join([_CONFIG_DIR, _CONFIG_FILE]),
-                        appauthor = False, roaming = True)
+                    output_path: str = _user_config(_CONFIG_FILE)
             case 2:
                 # User config
-                output_path: str = user_config_dir(os.sep.join([_CONFIG_DIR, _CONFIG_FILE]),
-                    appauthor = False, roaming = True)
+                output_path: str = _user_config(_CONFIG_FILE)
             case 3:
                 # Global config
-                output_path: str = site_config_dir(os.sep.join([_CONFIG_DIR, _CONFIG_FILE]),
-                    appauthor = False, multipath = True)
+                output_path: str = _global_config(_CONFIG_FILE)
             case _:
                 raise ValueError(f'Scope {scope} not supported, must be [0,3].')
 
@@ -234,27 +310,19 @@ def load_config(dirpath: str = os.curdir) -> PrjmanConfig:
         The loaded configuration.
     """
     # Get project config
-    config: DictObject = _read_and_update_dict({}, os.sep.join([dirpath, f'.{_CONFIG_FILE}']))
+    config: DictObject = _read_and_update_dict({}, _project_config(dirpath, f'.{_CONFIG_FILE}'))
 
     # Get environment variable config
-    config = _read_and_update_dict(config, os.getenv(_ENV_VAR))
+    config = _read_and_update_dict(config, _env_var_config(_CONFIG_FILE))
 
     # Get site config if available
-    if sys.prefix != sys.base_prefix:
-        config = _read_and_update_dict(config,
-            os.sep.join([sys.prefix, _CONFIG_DIR, _CONFIG_FILE])
-        )
+    config = _read_and_update_dict(config, _site_config(_CONFIG_FILE))
 
     # Read user config
-    config = _read_and_update_dict(config,
-        user_config_dir(os.sep.join([_CONFIG_DIR, _CONFIG_FILE]), appauthor = False, roaming = True)
-    )
+    config = _read_and_update_dict(config, _user_config(_CONFIG_FILE))
 
     # Read global config
-    config = _read_and_update_dict(config,
-        site_config_dir(os.sep.join([_CONFIG_DIR, _CONFIG_FILE]),
-            appauthor = False, multipath = True)
-    )
+    config = _read_and_update_dict(config, _global_config(_CONFIG_FILE))
 
     # Set current project directory
     config['dirpath'] = dirpath

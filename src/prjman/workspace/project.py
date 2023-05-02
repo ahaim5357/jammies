@@ -13,7 +13,7 @@ from prjman.singleton import METADATA_CODEC, METADATA_BUILDER
 from prjman.utils import download_file
 from prjman.metadata.base import ProjectMetadata
 from prjman.workspace.patcher import apply_patch, create_patch
-from prjman.config.base import PrjmanConfig
+from prjman.config import PrjmanConfig
 
 _PROJECT_METADATA_NAME: str = 'project_metadata.json'
 """The file name of the project metadata."""

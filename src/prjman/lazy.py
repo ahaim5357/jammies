@@ -5,7 +5,7 @@ import sys
 from types import ModuleType
 from typing import Dict
 from importlib.machinery import ModuleSpec
-from importlib.util import find_spec, LazyLoader, module_from_spec
+from importlib.util import find_spec, LazyLoader, module_from_spec, spec_from_file_location
 
 _LAZY_IMPORTS: Dict[str, ModuleType] = {}
 """A dictionary containing all the modules that were lazily imported."""
@@ -44,3 +44,29 @@ def _lazy_import(name: str) -> ModuleType:
 
 SINGLETON: ModuleType = _lazy_import('prjman.singleton')
 """The prjman.singleton module added as a lazy import."""
+
+def dynamic_import(module_type: str, name: str, path: str) -> ModuleType:
+    """Dynamically imports a module into the current Python executable.
+    Modules dynamically imported will be prefixed with `prjman.dynamic`,
+    followed by the module type and the associated name.
+
+    Parameters
+    ----------
+    module_type : str
+        The type of module being dynamically imported.
+    name : str
+        The name of the module to import.
+    path : str
+        The location of the module to import.
+    
+    Returns
+    -------
+    ModuleType
+        The dynamically loaded module.
+    """
+    module_name: str = f'prjman.dynamic.{module_type}.{name}'
+    spec: ModuleSpec | None = spec_from_file_location(module_name, location = path)
+    module: ModuleType = module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
