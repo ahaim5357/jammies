@@ -155,7 +155,15 @@ class PrjmanConfig:
 
     def update_and_write(self, setter: Callable[['PrjmanConfig'], Any],
             save: bool = False) -> None:
-        """TODO"""
+        """Updates and writes the value to the project configuration.
+        
+        Parameter
+        ---------
+        setter : (PrjmanConfig) -> None
+            A consumer which sets a configuration property.
+        save : bool (default 'False')
+            When 'True', save the configuration to the project scope.
+        """
         setter(self)
         if save:
             self.write_config()

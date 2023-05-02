@@ -69,6 +69,13 @@ class ProjectMetadata:
             # Ask to disable warning message if config is present
             if config:
                 def _disable_warning_message(conf: PrjmanConfig) -> None:
+                    """Disables the warning message within the config.
+                    
+                    Parameters
+                    ----------
+                    config : PrjmanConfig
+                        The configuration settings.
+                    """
                     conf.project.display_warning_message = False
 
                 config.update_and_write(_disable_warning_message,
