@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 from requests import Response
 from prjman.singleton import METADATA_CODEC, METADATA_BUILDER
 from prjman.utils import download_file
-from prjman.metadata.base import ProjectMetadata
+from prjman.metadata import ProjectMetadata
 from prjman.workspace.patcher import apply_patch, create_patch
 from prjman.config import PrjmanConfig
 

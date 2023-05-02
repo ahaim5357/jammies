@@ -3,7 +3,7 @@
 
 from prjman.module import SINGLETON
 from prjman.struct.codec import DictObject
-from prjman.metadata.file import ProjectFile, ProjectFileCodec, build_file
+from prjman.meta.file import ProjectFile, ProjectFileCodec, build_file
 from prjman.utils import download_and_write
 
 class URLProjectFile(ProjectFile):

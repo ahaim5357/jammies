@@ -6,7 +6,7 @@ from git import Repo
 from prjman.module import SINGLETON
 from prjman.utils import get_default, input_with_default, input_yn_default
 from prjman.struct.codec import DictObject
-from prjman.metadata.file import ProjectFile, ProjectFileCodec, build_file
+from prjman.meta.file import ProjectFile, ProjectFileCodec, build_file
 
 _VALID_BRANCH_TYPES: Set[str] = {
     'branch',

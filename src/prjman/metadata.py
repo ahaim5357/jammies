@@ -6,7 +6,7 @@ from typing import List, Tuple, Set, Dict
 from pathlib import Path
 import fnmatch
 from prjman.module import SINGLETON
-from prjman.metadata.file import ProjectFile
+from prjman.meta.file import ProjectFile
 from prjman.struct.codec import DictCodec, DictObject
 from prjman.utils import get_or_default, input_yn_default
 from prjman.config import PrjmanConfig
