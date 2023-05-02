@@ -35,8 +35,8 @@ class GitProjectFile(ProjectFile):
         self.repository: str = repository
         self.branch: str | None = branch
         if branch_type not in _VALID_BRANCH_TYPES:
-            raise ValueError(f'\"{branch_type}\" is not a valid branch type. \
-                Specify one of the following: {", ".join(_VALID_BRANCH_TYPES)}')
+            raise ValueError(f"'{branch_type}' is not a valid branch type. "
+                + f"Specify one of the following: {', '.join(_VALID_BRANCH_TYPES)}")
         self.branch_type: str = branch_type
 
     def codec(self) -> 'ProjectFileCodec':
@@ -63,7 +63,7 @@ def build_git() -> GitProjectFile:
     if input_yn_default('Would you like to specify a checkout location', True):
         branch_type: str = input_with_default(
             GitProjectFile, 'branch_type', ', '.join(_VALID_BRANCH_TYPES))
-        branch: str | None = input(f"{branch_type.capitalize()} id: ")
+        branch: str | None = input(f'{branch_type.capitalize()} id: ')
     else:
         branch_type: str = get_default(GitProjectFile, 'branch_type')
         branch: str | None = None

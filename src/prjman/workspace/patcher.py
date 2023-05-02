@@ -81,10 +81,10 @@ def apply_patch(text: str, patch: str, revert: bool = False) -> str:
     # Determine whether to apply changes or revert them
     ## midx is the index into the header to determine what to apply
     ## sign is whether to consider the addition or removal as the final transformer
-    midx, sign = (1,'+') if not revert else (3,'-') # midx, sign: int, str
+    midx, sign = (1, '+') if not revert else (3, '-') # midx, sign: int, str
 
     # Skip header lines
-    while pidx < len(patch) and patch[pidx].startswith(("---","+++")):
+    while pidx < len(patch) and patch[pidx].startswith(('---', '+++')):
         pidx += 1
 
     # Apply patches as long as there are still patch lines left

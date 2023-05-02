@@ -4,6 +4,7 @@
 import click
 import prjman.workspace.project as wspc
 from prjman.metadata.base import ProjectMetadata
+from prjman.config.base import PrjmanConfig, load_config
 
 @click.group()
 def main() -> None:
@@ -34,27 +35,35 @@ def init(import_metadata: str | None = None, include_hidden: bool = False) -> No
     the metadata builder if neither are present.
     """
 
+    # Read config
+    config: PrjmanConfig = load_config()
+
     # Get metadata
-    metadata: ProjectMetadata = wspc.read_metadata(import_loc = import_metadata)
+    metadata: ProjectMetadata = wspc.read_metadata(dirpath = config.dirpath,
+        import_loc = import_metadata)
     clean_dir = metadata.location['clean']
     working_dir = metadata.location['src']
     patch_dir = metadata.location['patches']
     out_dir = metadata.location['out']
 
     # Setup workspace
-    wspc.setup_clean(metadata, clean_dir = clean_dir)
-    wspc.setup_working(clean_dir = clean_dir, working_dir = working_dir,
-        patch_dir = patch_dir, out_dir = out_dir, include_hidden = include_hidden)
-
-    print('Initialized patching environment!')
+    if wspc.setup_clean(metadata, config = config, clean_dir = clean_dir):
+        wspc.setup_working(clean_dir = clean_dir, working_dir = working_dir,
+            patch_dir = patch_dir, out_dir = out_dir, include_hidden = include_hidden)
+        print('Initialized patching environment!')
+    else:
+        print('Could not generate clean workspace.')
 
 @patch.command(name = 'output')
 def output() -> None:
     """Generates any patches and clones the new files to an output
     directory."""
 
+    # Read config
+    config: PrjmanConfig = load_config()
+
     # Get metadata
-    metadata: ProjectMetadata = wspc.read_metadata()
+    metadata: ProjectMetadata = wspc.read_metadata(dirpath = config.dirpath)
     clean_dir = metadata.location['clean']
     working_dir = metadata.location['src']
     patch_dir = metadata.location['patches']
@@ -79,14 +88,19 @@ def clean(import_metadata: str | None = None) -> None:
     the metadata builder if neither are present.
     """
 
+    # Read config
+    config: PrjmanConfig = load_config()
+
     # Get metadata
-    metadata: ProjectMetadata = wspc.read_metadata(import_loc = import_metadata)
+    metadata: ProjectMetadata = wspc.read_metadata(dirpath = config.dirpath,
+        import_loc = import_metadata)
     clean_dir = metadata.location['clean']
 
     # Setup workspace
-    wspc.setup_clean(metadata, clean_dir = clean_dir)
-
-    print('Setup clean workspace!')
+    if wspc.setup_clean(metadata, config = config, clean_dir = clean_dir):
+        print('Setup clean workspace!')
+    else:
+        print('Could not generate clean workspace.')
 
 @patch.command(name = 'src')
 @click.option(
@@ -101,15 +115,21 @@ def source(import_metadata: str | None = None) -> None:
     the metadata builder if neither are present.
     """
 
+    # Read config
+    config: PrjmanConfig = load_config()
+
     # Get metadata
-    metadata: ProjectMetadata = wspc.read_metadata(import_loc = import_metadata)
+    metadata: ProjectMetadata = wspc.read_metadata(dirpath = config.dirpath,
+        import_loc = import_metadata)
     working_dir = metadata.location['src']
     patch_dir = metadata.location['patches']
     out_dir = metadata.location['out']
 
     # Setup workspace
-    wspc.setup_clean(metadata, clean_dir = working_dir, invalidate_cache = True)
-    wspc.setup_working_raw(working_dir = working_dir,
-        patch_dir = patch_dir, out_dir = out_dir)
-
-    print('Setup patched workspace!')
+    if wspc.setup_clean(metadata, config = config, clean_dir = working_dir,
+            invalidate_cache = True):
+        wspc.setup_working_raw(working_dir = working_dir,
+            patch_dir = patch_dir, out_dir = out_dir)
+        print('Setup patched workspace!')
+    else:
+        print('Could not generate clean workspace.')
