@@ -4,7 +4,7 @@
 import click
 import prjman.workspace.project as wspc
 from prjman.metadata.base import ProjectMetadata
-from prjman.config.base import PrjmanConfig, load_config
+from prjman.config import PrjmanConfig, load_config
 
 @click.group()
 def main() -> None:

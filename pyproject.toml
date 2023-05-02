@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "prjman"
-version = "0.4.0.dev4"
+version = "0.4.0.dev5"
 authors = [
     { name = "Aaron Haim", email = "ahaim@ashwork.net" }
 ]

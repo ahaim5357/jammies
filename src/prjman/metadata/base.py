@@ -9,7 +9,7 @@ from prjman.lazy import SINGLETON
 from prjman.metadata.file import ProjectFile
 from prjman.struct.codec import DictCodec, DictObject
 from prjman.utils import get_or_default, input_yn_default
-from prjman.config.base import PrjmanConfig
+from prjman.config import PrjmanConfig
 
 _DEFAULT_LOCATIONS: Dict[str, str] = {
     'clean': 'clean',
