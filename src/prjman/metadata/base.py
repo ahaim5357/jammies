@@ -9,6 +9,7 @@ from prjman.lazy import SINGLETON
 from prjman.metadata.file import ProjectFile
 from prjman.struct.codec import DictCodec, DictObject
 from prjman.utils import get_or_default, input_yn_default
+from prjman.config.base import PrjmanConfig
 
 _DEFAULT_LOCATIONS: Dict[str, str] = {
     'clean': 'clean',
@@ -47,14 +48,36 @@ class ProjectMetadata:
                 self.location[key] = value
         self.extra: DictObject = {} if extra is None else extra
 
-    def setup(self, root_dir: str) -> bool:
+    def setup(self, root_dir: str, config: PrjmanConfig | None = None) -> bool:
         """Sets up the project for usage.
 
         Parameters
         ----------
         root_dir : str
             The root directory to set up the project in.
+        config : PrjmanConfig | None (default 'None')
+            The configuration settings.
         """
+
+        # Display warning message if no config is present or the warning message is enabled
+        if (not config) or config.project.display_warning_message:
+            if not input_yn_default('You are about to download project files from third parties. '
+                + 'prjman and its maintainers are not liable for anything that happens '
+                + 'as a result of downloading or using these files. Would you still like to '
+                + 'download these files?', True):
+                return False
+            # Ask to disable warning message if config is present
+            if config:
+                def _disable_warning_message(conf: PrjmanConfig) -> None:
+                    conf.project.display_warning_message = False
+
+                config.update_and_write(_disable_warning_message,
+                    save = input_yn_default(
+                        'Would you like to hide this warning message from now on?',
+                        False
+                    )
+                )
+
         failed: List[ProjectFile] = []
 
         for file in self.files: # type: ProjectFile
@@ -117,7 +140,7 @@ def build_metadata() -> ProjectMetadata:
     files: List[ProjectFile] = []
     flag: bool = True
     while flag:
-        file_type: str = input(f"Add file ({available_file_types}): ").lower()
+        file_type: str = input(f'Add file ({available_file_types}): ').lower()
         files.append(SINGLETON.PROJECT_FILE_BUILDERS[file_type]())
         flag = input_yn_default('Would you like to add another file', True)
 

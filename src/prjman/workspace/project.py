@@ -13,6 +13,7 @@ from prjman.singleton import METADATA_CODEC, METADATA_BUILDER
 from prjman.utils import download_file
 from prjman.metadata.base import ProjectMetadata
 from prjman.workspace.patcher import apply_patch, create_patch
+from prjman.config.base import PrjmanConfig
 
 _PROJECT_METADATA_NAME: str = 'project_metadata.json'
 """The file name of the project metadata."""
@@ -23,7 +24,6 @@ _PATCH_EXTENSION: str = 'patch'
 _TMP_DIR: str = '.tmp'
 """The directory for temporary files or directories."""
 
-# TODO: Expand to read metadata inside another json object
 def read_metadata(dirpath: str = os.curdir, import_loc: str | None = None) -> ProjectMetadata:
     """Creates or reads project metadata for the current / to-be workspace.
 
@@ -122,14 +122,16 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
 
     return metadata
 
-def setup_clean(metadata: ProjectMetadata, clean_dir: str = 'clean',
-        invalidate_cache: bool = False) -> bool:
+def setup_clean(metadata: ProjectMetadata, config: PrjmanConfig | None = None,
+        clean_dir: str = 'clean', invalidate_cache: bool = False) -> bool:
     """Generates a clean workspace from the project metadata.
 
     Parameters
     ----------
     metadata : prjman.metadata.base.ProjectMetadata
         The metadata for the current workspace.
+    config : PrjmanConfig | None (default 'None')
+        The configuration settings.
     clean_dir : str (default 'clean')
         The directory to generate the clean workspace within.
     invalidate_cache : bool (default False)
@@ -148,7 +150,7 @@ def setup_clean(metadata: ProjectMetadata, clean_dir: str = 'clean',
     # If the cache exists, then skip generation
     ## Otherwise generate the metadata information
     return True if os.path.exists(clean_dir) and os.path.isdir(clean_dir) \
-        else metadata.setup(clean_dir)
+        else metadata.setup(clean_dir, config = config)
 
 def apply_patches(working_dir: str = 'src', patch_dir: str = 'patches') -> bool:
     """Applies patches to the working directory.

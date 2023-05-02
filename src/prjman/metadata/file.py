@@ -92,8 +92,8 @@ def build_file(callback: Callable[[DictObject], PF]) -> PF:
         The built project file.
     """
     kwargs: DictObject = {
-        "name": input_with_default(ProjectFile, 'name', 'Name of the project file'),
-        "rel_dir": input_with_default(ProjectFile, 'rel_dir', 'Directory to extract to')
+        'name': input_with_default(ProjectFile, 'name', 'Name of the project file'),
+        'rel_dir': input_with_default(ProjectFile, 'rel_dir', 'Directory to extract to')
     }
     return callback(kwargs)
 
