@@ -6,11 +6,12 @@ import os
 import re
 from importlib.util import find_spec
 import inspect
-from typing import Any, Dict, Callable, TypeVar
+from typing import Any, Dict, Callable, TypeVar, Tuple
 from io import IOBase, BytesIO
 from uuid import uuid4
 from mimetypes import guess_extension
 from zipfile import ZipFile
+from urllib.parse import urlparse
 import requests
 
 def get_default(func: Callable[..., Any], param: str) -> Any | None:
@@ -140,10 +141,16 @@ def unzip(file: str | IOBase, out_dir: str = os.curdir) -> None:
     with ZipFile(file, 'r') as zip_ref: # type: ZipFile
         zip_ref.extractall(out_dir)
 
-_FILENAME_REGEX: str = \
-    r'filename\*?=(?:\"([^\'\"\n;]+)\"|(?:(?:UTF-8|ISO-8859-1|[^\'\"])\'[^\'\"]?\')([^\'\"\n;]+));?'
-"""Regex for getting the filename from the content-disposition header.
-Tries to read normal filename and a fuzzy regex of the
+_FILENAME_PARAM_REGEX: str = \
+    r'filename=(?:([A-Za-z0-9\!\#\$\%\&\'\*\+\-\.\^\_\`\|\~]+)|(?:\"([^\"]*)\"))'
+"""Regex for getting the filename from the content-disposition header using the
+[RFC6266](https://datatracker.ietf.org/doc/html/rfc6266#section-4.1) spec.
+"""
+
+_FILENAME_STAR_PARAM_REGEX: str = \
+    r'filename\*=(?:[A-Za-z0-9\!\#\$\%\&\+\-\^\_\`\{\}\~]+)\'[A-Za-z0-9\%\-]*\'' \
+        + r'((?:%[0-9A-Fa-f]{2}|[A-Za-z0-9\!\#\$\%\&\+\-\.\^\_\`\|\~])*)'
+"""Regex for getting the filename* from the content-disposition header using the
 [RFC8187](https://datatracker.ietf.org/doc/html/rfc8187) spec.
 """
 
@@ -186,24 +193,22 @@ def download_file(url: str, handler: Callable[[requests.Response, str], bool],
 
         ## Lookup filename from content disposition if present
         if _CONTENT_DISPOSITION in response.headers:
-            for filename_lookup in re.findall(_FILENAME_REGEX,
-                    response.headers[_CONTENT_DISPOSITION]): # type: Tuple[str, str]
-                # If filename* is present, set and then break
-                if (name := filename_lookup[1]): # name: str
-                    filename = name
-                    break
-                # Otherwise, set the normal filename and keep checking
-                filename = filename_lookup[0]
+            if 'filename*' in (disp := response.headers[_CONTENT_DISPOSITION]):
+                filename: str = re.findall(_FILENAME_STAR_PARAM_REGEX, disp)[0]
+            elif 'filename' in disp:
+                matches: Tuple[str, str] = re.findall(_FILENAME_PARAM_REGEX, disp)[0]
+                filename: str = matches[0] if matches[0] else matches[1]
 
-        ## If no filename was present, assign a default name
-        if filename is None:
-            filename: str = str(uuid4())
-            # Set file extension from content type, if available
-            if _CONTENT_TYPE in response.headers:
-                if (ext := guess_extension(
-                        response.headers[_CONTENT_TYPE].partition(';')[0].strip()
-                    )) is not None: # ext: str | None
-                    filename += ext
+        # Set to basename of path if not present
+        if not filename:
+            filename = os.path.basename(urlparse(url).path)
+
+        # Check to see if extension is present
+        name, ext = os.path.splitext(filename)
+
+        # If no extension is present and we have access to the content type
+        if not ext and _CONTENT_TYPE in response.headers:
+            filename = name + guess_extension(response.headers[_CONTENT_TYPE].partition(';')[0].strip())
 
         # Handle the result of the downloaded file
         return handler(response, filename)
