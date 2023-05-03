@@ -7,7 +7,7 @@ from typing import Callable
 from importlib.machinery import ModuleSpec
 from importlib.util import find_spec, LazyLoader, module_from_spec, spec_from_file_location
 
-def _load_module(module_name: str,
+def load_module(module_name: str,
         spec_getter: Callable[[str], ModuleSpec] = find_spec) -> ModuleType:
     """Loads a module based on its name and getter for the spec.
     If the module is already loaded, it will be used instead.
@@ -69,7 +69,7 @@ def _lazy_import(name: str) -> ModuleType:
         spec.loader = loader
         return spec
 
-    return _load_module(name, spec_getter = _set_lazy)
+    return load_module(name, spec_getter = _set_lazy)
 
 SINGLETON: ModuleType = _lazy_import('prjman.singleton')
 """The prjman.singleton module added as a lazy import."""
@@ -95,5 +95,5 @@ def dynamic_import(module_type: str, name: str, path: str) -> ModuleType:
     """
     module_name: str = f'prjman.dynamic.{module_type}.{name}'
 
-    return _load_module(module_name,
+    return load_module(module_name,
         spec_getter = lambda mdn: spec_from_file_location(mdn, location = path))
