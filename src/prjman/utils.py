@@ -8,7 +8,6 @@ from importlib.util import find_spec
 import inspect
 from typing import Any, Dict, Callable, TypeVar, Tuple
 from io import IOBase, BytesIO
-from uuid import uuid4
 from mimetypes import guess_extension
 from zipfile import ZipFile
 from urllib.parse import urlparse
@@ -208,7 +207,8 @@ def download_file(url: str, handler: Callable[[requests.Response, str], bool],
 
         # If no extension is present and we have access to the content type
         if not ext and _CONTENT_TYPE in response.headers:
-            filename = name + guess_extension(response.headers[_CONTENT_TYPE].partition(';')[0].strip())
+            filename = name + guess_extension(response.headers[_CONTENT_TYPE]
+                .partition(';')[0].strip())
 
         # Handle the result of the downloaded file
         return handler(response, filename)
