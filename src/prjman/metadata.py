@@ -8,7 +8,7 @@ import fnmatch
 from prjman.module import SINGLETON
 from prjman.meta.file import ProjectFile
 from prjman.struct.codec import DictCodec, DictObject
-from prjman.utils import get_or_default, input_yn_default
+from prjman.utils import get_or_default, input_yn_default, input_with_default
 from prjman.config import PrjmanConfig
 
 _DEFAULT_LOCATIONS: Dict[str, str] = {
@@ -24,7 +24,7 @@ class ProjectMetadata:
 
     def __init__(self, files: List[ProjectFile],
             ignore: List[str] | None = None, overwrite: List[str] | None = None,
-            location: DictObject | None = None,
+            location: DictObject | None = None, post_processor: str | None = None,
             extra: DictObject | None = None) -> None:
         """
         Parameters
@@ -33,8 +33,12 @@ class ProjectMetadata:
             The files associated with the project.
         ignore : list of str (default '[]')
             The patterns for files that are ignored for patching.
-        overwrite: list of str (default '[]')
+        overwrite : list of str (default '[]')
             The patterns for files that are overwritten instead of patching.
+        location : dict[str, str] | None (default 'None')
+            A alias map for directories used by this project.
+        post_processor : str | None (default 'None')
+            When present, a python module method to run after the file has been setup.
         extra : dict[str, Any] (default '{}')
             Extra data defined by the user.
         """
@@ -46,6 +50,7 @@ class ProjectMetadata:
         for key, value in _DEFAULT_LOCATIONS.items():
             if key not in self.location:
                 self.location[key] = value
+        self.post_processor: str | None = post_processor
         self.extra: DictObject = {} if extra is None else extra
 
     def setup(self, root_dir: str, config: PrjmanConfig | None = None) -> bool:
@@ -91,7 +96,21 @@ class ProjectMetadata:
             if not file.setup(root_dir):
                 failed.append(file)
 
-        return not failed
+        # If some files during the project file section failed, quick exit
+        if failed:
+            return False
+
+        # If the config isn't present or there is no post processor,
+        ## then just simply return True
+        if not (config and self.post_processor):
+            return True
+
+        # Otherwise, check if module is present and run
+        if method := config.load_dynamic_method('scripts', self.post_processor):
+            return method(root_dir)
+
+        # If the module isn't present, return false
+        return False
 
     def codec(self) -> 'ProjectMetadataCodec':
         """Returns the codec used to encode and decode this metadata.
@@ -165,8 +184,12 @@ def build_metadata() -> ProjectMetadata:
         overwrite.append(input('Add pattern to overwrite: '))
         flag = input_yn_default('Would you like to overwrite another pattern', True)
 
+    post_processor: str | None = input_with_default(ProjectFile, 'post_processor',
+        'Function to run an additional task after setup (\'<module>:<function_name>\')')
+
     # Create metadata
-    return ProjectMetadata(files, ignore = ignore, overwrite = overwrite)
+    return ProjectMetadata(files, ignore = ignore, overwrite = overwrite,
+        post_processor = post_processor)
 
 class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
     """A codec for encoding and decoding a ProjectMetadata.
@@ -187,6 +210,9 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
                 location[key] = value
         if obj.location:
             dict_obj['location'] = location
+
+        if obj.post_processor:
+            dict_obj['post_processor'] = obj.post_processor
 
         if obj.extra:
             dict_obj['extra'] = obj.extra
@@ -212,4 +238,5 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
             ignore = get_or_default(obj, 'ignore', ProjectMetadata),
             overwrite = get_or_default(obj, 'overwrite', ProjectMetadata),
             location = get_or_default(obj, 'location', ProjectMetadata),
+            post_processor = get_or_default(obj, 'post_processor', ProjectMetadata),
             extra = get_or_default(obj, 'extra', ProjectMetadata))
