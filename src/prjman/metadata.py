@@ -2,13 +2,13 @@
 """
 
 import os
-from typing import List, Tuple, Set, Dict
+from typing import List, Tuple, Set, Dict, Callable
 from pathlib import Path
 import fnmatch
 from prjman.module import SINGLETON
 from prjman.meta.file import ProjectFile
 from prjman.struct.codec import DictCodec, DictObject
-from prjman.utils import get_or_default, input_yn_default, input_with_default
+from prjman.utils import get_or_default, input_yn_default
 from prjman.config import PrjmanConfig
 
 _DEFAULT_LOCATIONS: Dict[str, str] = {
@@ -24,7 +24,7 @@ class ProjectMetadata:
 
     def __init__(self, files: List[ProjectFile],
             ignore: List[str] | None = None, overwrite: List[str] | None = None,
-            location: DictObject | None = None, post_processor: str | None = None,
+            location: DictObject | None = None, post_processor: List[str] | str | None = None,
             extra: DictObject | None = None) -> None:
         """
         Parameters
@@ -50,7 +50,7 @@ class ProjectMetadata:
         for key, value in _DEFAULT_LOCATIONS.items():
             if key not in self.location:
                 self.location[key] = value
-        self.post_processor: str | None = post_processor
+        self.post_processor: List[str] | None = [post_processor] if isinstance(post_processor, str) else post_processor
         self.extra: DictObject = {} if extra is None else extra
 
     def setup(self, root_dir: str, config: PrjmanConfig | None = None) -> bool:
@@ -106,11 +106,35 @@ class ProjectMetadata:
             return True
 
         # Otherwise, check if module is present and run
-        if method := config.load_dynamic_method('scripts', self.post_processor):
-            return method(root_dir)
+        methods: List[Tuple[str, Callable[[str, str], bool]]] = []
+        for processor in self.post_processor: # type: str
+            if method := config.load_dynamic_method('scripts', processor):
+                methods.append((processor, method))
+            else:
+                print(f'Post processor \'{processor}\' failed to load, skipping!')
 
-        # If the module isn't present, return false
-        return False
+        failed_processors: List[Tuple[str, str]] = []
+
+        for subdir, _, files in os.walk(root_dir): # type: Tuple[str, List[str], List[str]]
+            # For each file run every post processor
+            for file in files: # type: str
+                file = os.sep.join([subdir, file])
+                exists: bool = os.path.exists(file)
+                for pname, method in methods: # type: str, Callable[[str, str], bool]
+                    # Check if path exists
+                    if not exists:
+                        break
+
+                    # Check if method succeeds
+                    if not method(root_dir, file):
+                        failed_processors.append((pname, file))
+                        break
+
+                    # Recheck exists
+                    exists = os.path.exists(file)
+
+        # Verify no processors failed at any point
+        return not failed_processors
 
     def codec(self) -> 'ProjectMetadataCodec':
         """Returns the codec used to encode and decode this metadata.
@@ -184,8 +208,12 @@ def build_metadata() -> ProjectMetadata:
         overwrite.append(input('Add pattern to overwrite: '))
         flag = input_yn_default('Would you like to overwrite another pattern', True)
 
-    post_processor: str | None = input_with_default(ProjectFile, 'post_processor',
-        'Function to run an additional task after setup (\'<module>:<function_name>\')')
+    # Post processors
+    flag = input_yn_default('Would you like to add any post processors to the file', False)
+    post_processor: List[str] = [] if flag else None
+    while flag:
+        overwrite.append(input('Post processor (\'<module>:<function_name>\'):  '))
+        flag = input_yn_default('Would you like to add another post processor', True)
 
     # Create metadata
     return ProjectMetadata(files, ignore = ignore, overwrite = overwrite,
@@ -212,7 +240,8 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
             dict_obj['location'] = location
 
         if obj.post_processor:
-            dict_obj['post_processor'] = obj.post_processor
+            dict_obj['post_processor'] = obj.post_processor[0] \
+                if len(obj.post_processor) == 1 else obj.post_processor
 
         if obj.extra:
             dict_obj['extra'] = obj.extra
