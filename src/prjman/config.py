@@ -270,9 +270,9 @@ class PrjmanConfig:
         module_path: str | None = None
 
         # Find module path
-        if (module == 'internal'):
+        if module == 'internal':
             return getattr(load_module(f'prjman.{module}.{module_type}'), method)
-        
+
         if (abs_path := _project_config(self.dirpath, rel_path)) and os.path.exists(abs_path):
             module_path = abs_path
         elif (abs_path := _env_var_config(rel_path)) and os.path.exists(abs_path):
@@ -310,15 +310,16 @@ def _update_dict(original: DictObject, merging: DictObject) -> DictObject:
         The merged dictionary.
     """
     for key, value in merging.items():
-        # Check if value is a dictionary
-        if isinstance(value, dict):
-            # If so, add key and update dict
-            if key not in original:
+        # Check if key isn't already present
+        if key not in original:
+             # Check if value is a dictionary
+            if isinstance(value, dict):
+                # If so, add key and update dict
                 original[key] = {}
-            _update_dict(original[key], merging[key])
-        # Otherwise, merge key if not in original
-        elif key not in original:
-            original[key] = value
+                _update_dict(original[key], merging[key])
+            else:
+                # Otherwise, merge key
+                original[key] = value
     return original
 
 def _read_and_update_dict(original: DictObject, path: str | None) -> DictObject:
