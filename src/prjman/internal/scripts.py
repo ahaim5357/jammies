@@ -30,6 +30,23 @@ def unpack(_: str, filename: str) -> bool:
 
     return True
 
-def notebook_to_script(root_dir: str, filename: str) -> bool:
-    """TODO: Implement"""
-    return False
+def notebook_to_script(_: str, filename: str) -> bool:
+    """Converts a notebook to a script using `nbconvert`.
+
+    Parameters
+    ----------
+    root_dir : str
+        The project directory.
+    filename : str
+        The relative path of the file.
+    
+    Returns
+    -------
+    bool
+        `True` when the operation is successful.
+    """
+
+    if filename.endswith('.ipynb'):
+        # Run nbconvert
+        os.system(f'jupyter nbconvert --to script {filename}')
+    return True
