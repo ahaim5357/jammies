@@ -6,6 +6,8 @@ import prjman.workspace.project as wspc
 from prjman.metadata import ProjectMetadata
 from prjman.config import PrjmanConfig, load_config
 
+# TODO: REDO
+
 @click.group()
 def main() -> None:
     """A command line interface to construct,
