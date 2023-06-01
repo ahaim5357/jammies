@@ -15,7 +15,7 @@ from prjman.metadata import ProjectMetadata
 from prjman.workspace.patcher import apply_patch, create_patch
 from prjman.config import PrjmanConfig
 
-_PROJECT_METADATA_NAME: str = 'project_metadata.json'
+PROJECT_METADATA_NAME: str = 'project_metadata.json'
 """The file name of the project metadata."""
 
 _PATCH_EXTENSION: str = 'patch'

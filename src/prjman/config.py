@@ -143,10 +143,46 @@ class PrjmanProjectConfig:
         """
         return PrjmanProjectConfig(**obj)
 
+class PrjmanInternalConfig:
+    """Configurations within the 'internal' table."""
+
+    def __init__(self) -> None:
+        """
+        """
+
+    def encode_toml(self) -> Table:
+        """Encodes the 'internal' config into a table.
+
+        Returns
+        -------
+        Table
+            The encoded 'internal' config.
+        """
+        internal: Table = table()
+        internal.comment('Internal data for current project (DO NOT MODIFY)')
+        return internal
+
+    @classmethod
+    def decode_toml(cls, obj: DictObject) -> 'PrjmanInternalConfig':
+        """Decodes the 'internal' table.
+
+        Parameters
+        ----------
+        obj : dict[str, any]
+            The encoded 'internal' table.
+        
+        Returns
+        -------
+        PrjmanInternalConfig
+            The decoded 'internal' table.
+        """
+        return PrjmanInternalConfig(**obj)
+
 class PrjmanConfig:
     """Configurations for prjman."""
 
     def __init__(self, project: PrjmanProjectConfig = PrjmanProjectConfig(),
+            internal: PrjmanInternalConfig = PrjmanInternalConfig(),
             dirpath: str = os.curdir) -> None:
         """
         Parameters
@@ -157,9 +193,10 @@ class PrjmanConfig:
             The root directory of the project.
         """
         self.project: PrjmanProjectConfig = project
+        self.internal: PrjmanInternalConfig = internal
         self.dirpath: str = dirpath
 
-    def encode_toml(self) -> TOMLDocument:
+    def encode_toml(self, write_internal: bool = False) -> TOMLDocument:
         """Encodes the configuration.
 
         Returns
@@ -170,6 +207,9 @@ class PrjmanConfig:
         doc: TOMLDocument = document()
         doc.add(comment('The configuration file for prjman'))
         doc.add('project', self.project.encode_toml())
+
+        if write_internal:
+            doc.add('internal', self.internal.encode_toml())
         return doc
 
     @classmethod
@@ -201,34 +241,14 @@ class PrjmanConfig:
         scope : int (default '0')
             A number [0, 3] representing the project, site, user, or global config, respectively.
         """
-        output_path: str | None = None
-
-        match scope:
-            case 0:
-                # Project config
-                output_path: str = _project_config(self.dirpath, f'.{_CONFIG_FILE}')
-            case 1:
-                # Env var config if present
-                if env_var := _env_var_config(_CONFIG_FILE):
-                    output_path: str = env_var
-                # Otherwise site config if present
-                elif site_var := _site_config(_CONFIG_FILE):
-                    output_path: str = site_var
-                # Otherwise user config
-                else:
-                    output_path: str = _user_config(_CONFIG_FILE)
-            case 2:
-                # User config
-                output_path: str = _user_config(_CONFIG_FILE)
-            case 3:
-                # Global config
-                output_path: str = _global_config(_CONFIG_FILE)
-            case _:
-                raise ValueError(f'Scope {scope} not supported, must be [0,3].')
+        output_path: str = config_loc(dirpath = self.dirpath, scope = scope)
+        
+        # Create directories that are missing
+        os.makedirs(os.path.dirname(output_path), exist_ok = True)
 
         # Write config to file
         with open(output_path, mode = 'w', encoding = 'UTF-8') as file:
-            dump(self.encode_toml(), file)
+            dump(self.encode_toml(write_internal = scope == 0), file)
 
     def update_and_write(self, setter: Callable[['PrjmanConfig'], Any],
             save: bool = False) -> None:
@@ -376,3 +396,45 @@ def load_config(dirpath: str = os.curdir) -> PrjmanConfig:
     # Set current project directory
     config['dirpath'] = dirpath
     return PrjmanConfig.decode_toml(config)
+
+def config_loc(dirpath: str = os.curdir, scope: int = 0) -> str:
+    """Gets the location of the configuration in the specified scope.
+
+    Parameters
+    ----------
+    dirpath : str
+        The directory of the loaded project.
+    scope : int (default '0')
+        A number [0, 3] representing the project, site, user, or global config, respectively.
+    
+    Returns
+    -------
+    str
+        The location of the configuration.
+    """
+    output_path: str | None = None
+
+    match scope:
+        case 0:
+            # Project config
+            output_path: str = _project_config(dirpath, f'.{_CONFIG_FILE}')
+        case 1:
+            # Env var config if present
+            if env_var := _env_var_config(_CONFIG_FILE):
+                output_path: str = env_var
+            # Otherwise site config if present
+            elif site_var := _site_config(_CONFIG_FILE):
+                output_path: str = site_var
+            # Otherwise user config
+            else:
+                output_path: str = _user_config(_CONFIG_FILE)
+        case 2:
+            # User config
+            output_path: str = _user_config(_CONFIG_FILE)
+        case 3:
+            # Global config
+            output_path: str = _global_config(_CONFIG_FILE)
+        case _:
+            raise ValueError(f'Scope {scope} not supported, must be [0,3].')
+
+    return output_path
