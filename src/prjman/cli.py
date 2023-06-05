@@ -2,7 +2,9 @@
 """
 
 import os
+from typing import List
 import click
+from tomlkit import load as load_toml
 import prjman.workspace.project as wspc
 from prjman.metadata import ProjectMetadata
 from prjman.config import PrjmanConfig, load_config, config_loc as cloc
@@ -157,6 +159,76 @@ def config_loc(open_dir: bool = False, scope: str = 'project') -> None:
             f'-> prjman config create --{scope}',
             sep = '\n'
         )
+
+@config.command(name = 'list')
+def config_list() -> None:
+    """Lists all available configuration options."""
+    logger: Logger = Logger()
+    prj_config: PrjmanConfig = PrjmanConfig()
+    top_message: List[str] = ['Available config options']
+    top_message += map(lambda s: f'-> {s}', prj_config.list_vals())
+    logger.success(
+        *top_message,
+        sep = '\n'
+    )
+
+@config.command(name = 'value')
+@click.argument('name')
+@click.argument('value', required = False)
+@click.option('--scope', '-s',
+    type = click.Choice(['project', 'site', 'user', 'global'],
+        case_sensitive = False
+    ),
+    default = 'project',
+    help = 'The configuration to look for. If none is specified, ' \
+    + 'it will default to the project config.'
+)
+def config_value(name: str, value: str | None = None, scope: str = 'project') -> None:
+    """Gets the configuration value associated with the name in the
+    specified scope. If the value is specified, the name will be updated
+    to hold that value.
+    """
+    logger: Logger = Logger()
+    scope_val: int = int(scope == 'project') * 0 \
+        + int(scope == 'site') * 1 \
+        + int(scope == 'user') * 2 \
+        + int(scope == 'global') * 3
+
+    # Skip execution if project doesn't exist
+    if scope_val == 0 and not _check_project_config(logger, os.curdir):
+        return
+
+    # Otherwise check if config exists
+    if not os.path.exists(config_path := cloc(scope = scope_val)):
+        logger.error(
+            f'No config for {scope}. Create the config using:',
+            f'-> prjman config create --{scope}',
+            sep = '\n'
+        )
+        return
+
+    # Load config scope
+    prj_config: PrjmanConfig = None
+    with open(config_path, mode = 'r', encoding = 'UTF-8') as file:
+        prj_config = load_toml(file)
+        prj_config['dirpath'] = os.curdir
+        prj_config = PrjmanConfig.decode_toml(prj_config)
+
+    # If a value is present, set it within the config
+    if value:
+        success, val = prj_config.set_val(name, value)
+        if success:
+            prj_config.write_config(scope = scope_val)
+            logger.success(f'[{scope}] {name}: {val}')
+        else:
+            logger.error(f'[{scope}] {val}')
+    else:
+        # Otherwise, read the value
+        success, val = prj_config.get_val(name)
+        if success:
+            logger.success(f'[{scope}] {name} -> {val}')
+        else:
+            logger.error(f'[{scope}] {val}')
 
 @main.group()
 def patch() -> None:

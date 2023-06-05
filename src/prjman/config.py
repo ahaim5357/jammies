@@ -3,7 +3,7 @@
 
 import sys
 import os
-from typing import Callable, Any
+from typing import Callable, Any, Tuple, List
 from platformdirs import site_config_dir, user_config_dir
 from tomlkit import table, document, comment, TOMLDocument, load, dump, boolean
 from tomlkit.items import Table
@@ -110,6 +110,18 @@ class PrjmanProjectConfig:
         """
         self.display_warning_message: bool = display_warning_message
 
+    def list_vals(self) -> List[str]:
+        """Lists all configuration options.
+        
+        Returns
+        -------
+        list[str]
+            A list of all config options.
+        """
+        return [
+            'display_warning_message'
+        ]
+
     def encode_toml(self) -> Table:
         """Encodes the 'project' config into a table.
 
@@ -121,7 +133,7 @@ class PrjmanProjectConfig:
         project: Table = table()
         project.comment('Project related settings')
         project.add('display_warning_message',
-            boolean(self.display_warning_message).comment(
+            boolean(str(self.display_warning_message).casefold()).comment(
                 'When true, shows a warning message when attempting to download a project file'
             )
         )
@@ -196,6 +208,83 @@ class PrjmanConfig:
         self.internal: PrjmanInternalConfig = internal
         self.dirpath: str = dirpath
 
+    def list_vals(self) -> Tuple[bool, str]:
+        """Lists all configuration options.
+        
+        Returns
+        -------
+        list[str]
+            A list of all config options.
+        """
+
+        output: List[str] = []
+        output += map(lambda s: f'project.{s}', self.project.list_vals())
+        return output
+
+    def get_val(self, name: str) -> Tuple[bool, str]:
+        """Gets the value associated with the config name.
+        
+        Parameters
+        ----------
+        name : str
+            The key associated with the config value.
+        
+        Returns
+        -------
+        (bool, str)
+            A tuple containing whether the operation was successful
+            and the associated message.
+        """
+        # Do not allow access to internal params
+        if 'internal' in name:
+            return (False, 'Accessing internal options is not allowed.')
+
+        val: Any = self
+        for key in name.split('.'):
+            if not hasattr(val, key):
+                return (False, f'\'{name}\' is not a valid config option.')
+            val = getattr(val, key)
+        return (True, str(val))
+
+    def set_val(self, name: str, new_value: Any) -> Tuple[bool, str]:
+        """Sets the value for the associated config name.
+        
+        Parameters
+        ----------
+        name : str
+            The key associated with the config value.
+        
+        Returns
+        -------
+        (bool, str)
+            A tuple containing whether the operation was successful
+            and the associated message.
+        """
+        # Do not allow access to internal params
+        if 'internal' in name:
+            return (False, 'Accessing internal options is not allowed.')
+
+        name_path: List[str] = name.split('.')
+        # Get second to last attribute
+        val: Any = self
+        for key in name_path[:-1]:
+            if not hasattr(val, key):
+                return (False, f'\'{name}\' is not a valid config option.')
+            val = getattr(val, key)
+
+        if not hasattr(val, final_name := name_path[-1]):
+            return (False, f'\'{name}\' is not a valid config option.')
+
+        # Store previous value for update and cast type
+        prev: Any = getattr(val, final_name)
+        setattr(val, final_name,
+            new_value := (str(new_value).casefold() == 'True'.casefold()
+                if isinstance(prev, bool)
+                else type(prev)(new_value))
+        )
+
+        return (True, f'{str(prev)} -> {str(new_value)}')
+
     def encode_toml(self, write_internal: bool = False) -> TOMLDocument:
         """Encodes the configuration.
 
@@ -242,7 +331,7 @@ class PrjmanConfig:
             A number [0, 3] representing the project, site, user, or global config, respectively.
         """
         output_path: str = config_loc(dirpath = self.dirpath, scope = scope)
-        
+
         # Create directories that are missing
         os.makedirs(os.path.dirname(output_path), exist_ok = True)
 
