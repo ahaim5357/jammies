@@ -406,9 +406,6 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = 'clean', working_
     # Generate ignored and overwritten list
     ignore, overwrite = metadata.ignore_and_overwrite(working_dir) # Set[str], Set[str]
 
-    # Generate ignored and overwritten list
-    ignore, overwrite = metadata.ignore_and_overwrite(working_dir) # Set[str], Set[str]
-
     for subdir, _, files in os.walk(working_dir):
         for file in files:
             # Setup paths
