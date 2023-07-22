@@ -1,10 +1,28 @@
 """A script obtaining a project file from a download url.
 """
 
-from prjman.module import SINGLETON
 from prjman.struct.codec import DictObject
-from prjman.meta.file import ProjectFile, ProjectFileCodec, build_file
+from prjman.defn.file import ProjectFile, ProjectFileCodec
+from prjman.defn.builder import build_file
 from prjman.utils import download_and_write
+from prjman.registrar import PrjmanRegistrar
+
+def setup(registrar: PrjmanRegistrar) -> None:
+    """A setup method used to register components to the project.
+    
+    Parameters
+    ----------
+    registrar : `PrjmanRegistrar`
+        The registrar used to register the components for the project.
+    """
+
+    # Create codec
+    codec: URLProjectFileCodec = URLProjectFileCodec(registrar)
+
+    registrar.register_file_handler(_REGISTRY_NAME, codec, build_url)
+
+_REGISTRY_NAME: str = 'url'
+"""The registry name of the project file handler."""
 
 class URLProjectFile(ProjectFile):
     """A project file for a file at a downloadable url link.
@@ -20,24 +38,29 @@ class URLProjectFile(ProjectFile):
         super().__init__(**kwargs)
         self.url: str = url
 
-    def codec(self) -> 'ProjectFileCodec':
-        return SINGLETON.URL_FILE_CODEC
+    def registry_name(self) -> str:
+        return _REGISTRY_NAME
 
     def setup(self, root_dir: str) -> bool:
         super().setup(root_dir)
         return download_and_write(self.url, unzip_file = False,
             out_dir = self._create_path(root_dir))
 
-def build_url() -> URLProjectFile:
+def build_url(registrar: PrjmanRegistrar) -> URLProjectFile:
     """Builds an URLProjectFile from user input.
     
+    Parameters
+    ----------
+    registrar : `PrjmanRegistrar`
+        The registrar used to register the components for the project.
+
     Returns
     -------
     URLProjectFile
         The built project file.
     """
     url: str = input('Direct URL: ')
-    return build_file(lambda kwargs: URLProjectFile(url, **kwargs))
+    return build_file(registrar, _REGISTRY_NAME, lambda kwargs: URLProjectFile(url, **kwargs))
 
 class URLProjectFileCodec(ProjectFileCodec[URLProjectFile]):
     """A codec for encoding and decoding an URLProjectFile.
@@ -48,4 +71,5 @@ class URLProjectFileCodec(ProjectFileCodec[URLProjectFile]):
         return dict_obj
 
     def decode_type(self, obj: DictObject, **kwargs: DictObject) -> URLProjectFile:
+        kwargs['codec'] = self # Set codec
         return URLProjectFile(obj['url'], **kwargs)

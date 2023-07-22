@@ -9,13 +9,13 @@ import json
 from datetime import datetime
 from urllib.parse import urlparse
 from requests import Response
-from prjman.singleton import METADATA_CODEC, METADATA_BUILDER
+from prjman.log import Logger
 from prjman.utils import download_file
-from prjman.metadata import ProjectMetadata
+from prjman.defn.metadata import ProjectMetadata, METADATA_CODEC, build_metadata
 from prjman.workspace.patcher import apply_patch, create_patch
 from prjman.config import PrjmanConfig
 
-_PROJECT_METADATA_NAME: str = 'project_metadata.json'
+PROJECT_METADATA_NAME: str = 'project_metadata.json'
 """The file name of the project metadata."""
 
 _PATCH_EXTENSION: str = 'patch'
@@ -77,11 +77,11 @@ def read_metadata(dirpath: str = os.curdir, import_loc: str | None = None) -> Pr
             return write_metadata_to_file(dirpath, read_metadata_from_file(import_loc))
 
     # If none, check if project metadata exists in directory
-    if os.path.exists((path := os.sep.join([dirpath, _PROJECT_METADATA_NAME]))):
+    if os.path.exists((path := os.sep.join([dirpath, PROJECT_METADATA_NAME]))):
         return read_metadata_from_file(path)
 
     # Otherwise, open the builder
-    return write_metadata_to_file(dirpath, METADATA_BUILDER())
+    return write_metadata_to_file(dirpath, build_metadata())
 
 def read_metadata_from_file(path: str) -> ProjectMetadata:
     """Reads a project metadata from a file location.
@@ -116,13 +116,13 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
         The metadata for the current workspace.
     """
 
-    with open(os.sep.join([dirpath, _PROJECT_METADATA_NAME]),
+    with open(os.sep.join([dirpath, PROJECT_METADATA_NAME]),
             mode = 'w', encoding = 'UTF-8') as file:
         print(json.dumps(METADATA_CODEC.encode(metadata), indent = 4), file = file)
 
     return metadata
 
-def setup_clean(metadata: ProjectMetadata, config: PrjmanConfig | None = None,
+def setup_clean(metadata: ProjectMetadata, logger: Logger, config: PrjmanConfig | None = None,
         clean_dir: str = 'clean', invalidate_cache: bool = False) -> bool:
     """Generates a clean workspace from the project metadata.
 
@@ -130,6 +130,8 @@ def setup_clean(metadata: ProjectMetadata, config: PrjmanConfig | None = None,
     ----------
     metadata : prjman.metadata.base.ProjectMetadata
         The metadata for the current workspace.
+    logger : `Logger`
+        A logger for reporting on information.
     config : PrjmanConfig | None (default 'None')
         The configuration settings.
     clean_dir : str (default 'clean')
@@ -150,7 +152,7 @@ def setup_clean(metadata: ProjectMetadata, config: PrjmanConfig | None = None,
     # If the cache exists, then skip generation
     ## Otherwise generate the metadata information
     return True if os.path.exists(clean_dir) and os.path.isdir(clean_dir) \
-        else metadata.setup(clean_dir, config = config)
+        else metadata.setup(clean_dir, logger, config = config)
 
 def apply_patches(working_dir: str = 'src', patch_dir: str = 'patches') -> bool:
     """Applies patches to the working directory.

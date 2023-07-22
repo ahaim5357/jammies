@@ -2,6 +2,8 @@
 Methods can be referenced via 'internal:<method_name>
 """
 
+# TODO: Deprecated for removal
+
 import os
 from shutil import unpack_archive, _find_unpack_format
 

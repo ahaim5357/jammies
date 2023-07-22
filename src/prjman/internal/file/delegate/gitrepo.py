@@ -3,10 +3,27 @@
 
 from typing import Set
 from git import Repo
-from prjman.module import SINGLETON
+from git.util import rmtree
 from prjman.utils import get_default, input_with_default, input_yn_default
 from prjman.struct.codec import DictObject
-from prjman.meta.file import ProjectFile, ProjectFileCodec, build_file
+from prjman.defn.file import ProjectFile, ProjectFileCodec
+from prjman.defn.builder import build_file
+from prjman.registrar import PrjmanRegistrar
+from prjman.internal.file.gitrepo import _REGISTRY_NAME
+
+def setup_delegate(registrar: PrjmanRegistrar) -> None:
+    """A setup method used to register components to the project.
+    
+    Parameters
+    ----------
+    registrar : `PrjmanRegistrar`
+        The registrar used to register the components for the project.
+    """
+
+     # Create codec
+    codec: GitProjectFileCodec = GitProjectFileCodec(registrar)
+
+    registrar.register_file_handler(_REGISTRY_NAME, codec, build_git)
 
 _VALID_BRANCH_TYPES: Set[str] = {
     'branch',
@@ -39,21 +56,28 @@ class GitProjectFile(ProjectFile):
                 + f"Specify one of the following: {', '.join(_VALID_BRANCH_TYPES)}")
         self.branch_type: str = branch_type
 
-    def codec(self) -> 'ProjectFileCodec':
-        return SINGLETON.GIT_FILE_CODEC
+    def registry_name(self) -> str:
+        return _REGISTRY_NAME
 
     def setup(self, root_dir: str) -> bool:
         super().setup(root_dir)
 
         # Checkout and change branches, if applicable
-        repo: Repo = Repo.clone_from(self.repository, self._create_path(root_dir))
-        if self.branch is not None:
-            repo.git.checkout(self.branch)
+        with Repo.clone_from(self.repository, self._create_path(root_dir)) as repo:
+            if self.branch is not None:
+                repo.git.checkout(self.branch)
+
+        rmtree(self._create_path(root_dir, '.git'))
         return True
 
-def build_git() -> GitProjectFile:
+def build_git(registrar: PrjmanRegistrar) -> GitProjectFile:
     """Builds a GitProjectFile from user input.
     
+    Parameters
+    ----------
+    registrar : `PrjmanRegistrar`
+        The registrar used to register the components for the project.
+
     Returns
     -------
     GitProjectFile
@@ -67,7 +91,7 @@ def build_git() -> GitProjectFile:
     else:
         branch_type: str = get_default(GitProjectFile, 'branch_type')
         branch: str | None = None
-    return build_file(lambda kwargs:
+    return build_file(registrar, _REGISTRY_NAME, lambda kwargs:
         GitProjectFile(repository, branch = branch, branch_type = branch_type, **kwargs)
     )
 
@@ -82,6 +106,7 @@ class GitProjectFileCodec(ProjectFileCodec[GitProjectFile]):
         return dict_obj
 
     def decode_type(self, obj: DictObject, **kwargs: DictObject) -> GitProjectFile:
+        kwargs['codec'] = self # Set codec
         for branch_name in _VALID_BRANCH_TYPES: # type: str
             if branch_name in obj:
                 return GitProjectFile(

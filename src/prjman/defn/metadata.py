@@ -4,9 +4,11 @@
 import os
 from typing import List, Tuple, Set, Dict, Callable
 from pathlib import Path
+import shutil
 import fnmatch
-from prjman.module import SINGLETON
-from prjman.meta.file import ProjectFile
+from prjman.log import Logger
+from prjman.registrar import PrjmanRegistrar
+from prjman.defn.file import ProjectFile
 from prjman.struct.codec import DictCodec, DictObject
 from prjman.utils import get_or_default, input_yn_default
 from prjman.config import PrjmanConfig
@@ -24,8 +26,7 @@ class ProjectMetadata:
 
     def __init__(self, files: List[ProjectFile],
             ignore: List[str] | None = None, overwrite: List[str] | None = None,
-            location: DictObject | None = None, post_processor: List[str] | str | None = None,
-            extra: DictObject | None = None) -> None:
+            location: DictObject | None = None, extra: DictObject | None = None) -> None:
         """
         Parameters
         ----------
@@ -37,8 +38,6 @@ class ProjectMetadata:
             The patterns for files that are overwritten instead of patching.
         location : dict[str, str] | None (default 'None')
             A alias map for directories used by this project.
-        post_processor : str | None (default 'None')
-            When present, a python module method to run after the file has been setup.
         extra : dict[str, Any] (default '{}')
             Extra data defined by the user.
         """
@@ -50,16 +49,34 @@ class ProjectMetadata:
         for key, value in _DEFAULT_LOCATIONS.items():
             if key not in self.location:
                 self.location[key] = value
-        self.post_processor: List[str] | None = [post_processor] if isinstance(post_processor, str) else post_processor
         self.extra: DictObject = {} if extra is None else extra
 
-    def setup(self, root_dir: str, config: PrjmanConfig | None = None) -> bool:
+    def __copy_and_log(self, src: str, dst: str, config: PrjmanConfig) -> object:
+        """Copies and logs a generated file.
+
+        Parameters
+        ----------
+        src : str
+            The source location of the file.
+        dst : str
+            The destination of the file.
+        config : `PrjmanConfig`
+            The configuration settings.
+        """
+
+        output: object = shutil.copy2(src, dst)
+        config.internal.add_generated_file(dst)
+        return output
+
+    def setup(self, root_dir: str, logger: Logger, config: PrjmanConfig | None = None) -> bool:
         """Sets up the project for usage.
 
         Parameters
         ----------
         root_dir : str
             The root directory to set up the project in.
+        logger : `Logger`
+            A logger for reporting on information.
         config : PrjmanConfig | None (default 'None')
             The configuration settings.
         """
@@ -90,51 +107,42 @@ class ProjectMetadata:
                     )
                 )
 
+        # Clear generated files
+        if config:
+            config.internal.clear_generated_files()
+
         failed: List[ProjectFile] = []
+        tmp_root: str = os.sep.join([root_dir, '.tmp'])
 
         for file in self.files: # type: ProjectFile
-            if not file.setup(root_dir):
+            # Setup file
+            if not file.setup(tmp_root):
+                logger.error(f'Failed to setup {file.registry_name()}')
                 failed.append(file)
+                shutil.rmtree(tmp_root)
+                continue
 
-        # If some files during the project file section failed, quick exit
-        if failed:
-            return False
+            # Apply post processor
+            if file.post_processor and not file.post_processor[0](logger, tmp_root):
+                pp_name: str = file.post_processor[1]['type']
+                logger.error(f'Failed to apply post processor {pp_name} to {file.registry_name()}')
+                failed.append(file)
+                shutil.rmtree(tmp_root)
+                continue
 
-        # If the config isn't present or there is no post processor,
-        ## then just simply return True
-        if not (config and self.post_processor):
-            return True
+            shutil.copytree(tmp_root, root_dir,
+                copy_function=lambda src, dst: self.__copy_and_log(src, dst, config) \
+                    if config else shutil.copy2,
+                dirs_exist_ok=True
+            )
+            shutil.rmtree(tmp_root)
 
-        # Otherwise, check if module is present and run
-        methods: List[Tuple[str, Callable[[str, str], bool]]] = []
-        for processor in self.post_processor: # type: str
-            if method := config.load_dynamic_method('scripts', processor):
-                methods.append((processor, method))
-            else:
-                print(f'Post processor \'{processor}\' failed to load, skipping!')
+        # Write generated files
+        if config:
+            config.update_and_write(lambda config: None, save = True)
 
-        failed_processors: List[Tuple[str, str]] = []
-
-        for subdir, _, files in os.walk(root_dir): # type: Tuple[str, List[str], List[str]]
-            # For each file run every post processor
-            for file in files: # type: str
-                file = os.sep.join([subdir, file])
-                exists: bool = os.path.exists(file)
-                for pname, method in methods: # type: str, Callable[[str, str], bool]
-                    # Check if path exists
-                    if not exists:
-                        break
-
-                    # Check if method succeeds
-                    if not method(root_dir, file):
-                        failed_processors.append((pname, file))
-                        break
-
-                    # Recheck exists
-                    exists = os.path.exists(file)
-
-        # Verify no processors failed at any point
-        return not failed_processors
+        # Verify no files failed at any point
+        return not failed
 
     def codec(self) -> 'ProjectMetadataCodec':
         """Returns the codec used to encode and decode this metadata.
@@ -144,7 +152,7 @@ class ProjectMetadata:
         ProjectFileCodec
             The codec used to encode and decode this metadata.
         """
-        return SINGLETON.METADATA_CODEC
+        return METADATA_CODEC
 
     def ignore_and_overwrite(self, root_dir: str) -> Tuple[Set[str], Set[str]]:
         """Gets the ignored and overwritten files from the specified directory.
@@ -186,12 +194,14 @@ def build_metadata() -> ProjectMetadata:
     """
 
     # Project Files
-    available_file_types: str = ', '.join(SINGLETON.PROJECT_FILE_BUILDERS.keys())
+    available_file_types: str = ', '.join(METADATA_CODEC.registrar.get_available_builders())
     files: List[ProjectFile] = []
     flag: bool = True
     while flag:
         file_type: str = input(f'Add file ({available_file_types}): ').lower()
-        files.append(SINGLETON.PROJECT_FILE_BUILDERS[file_type]())
+        files.append(
+            METADATA_CODEC.registrar.get_project_file_builder(file_type)(METADATA_CODEC.registrar)
+        )
         flag = input_yn_default('Would you like to add another file', True)
 
     # Ignore Patterns
@@ -208,20 +218,21 @@ def build_metadata() -> ProjectMetadata:
         overwrite.append(input('Add pattern to overwrite: '))
         flag = input_yn_default('Would you like to overwrite another pattern', True)
 
-    # Post processors
-    flag = input_yn_default('Would you like to add any post processors to the file', False)
-    post_processor: List[str] = [] if flag else None
-    while flag:
-        overwrite.append(input('Post processor (\'<module>:<function_name>\'):  '))
-        flag = input_yn_default('Would you like to add another post processor', True)
-
     # Create metadata
-    return ProjectMetadata(files, ignore = ignore, overwrite = overwrite,
-        post_processor = post_processor)
+    return ProjectMetadata(files, ignore = ignore, overwrite = overwrite)
 
 class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
     """A codec for encoding and decoding a ProjectMetadata.
     """
+
+    def __init__(self) -> None:
+        """
+        Parameters
+        ----------
+        registrar : `PrjmanRegistrar`
+            The registrar used to register the components for the project.
+        """
+        self.registrar: PrjmanRegistrar = None
 
     def encode(self, obj: ProjectMetadata) -> DictObject:
         dict_obj: DictObject = {}
@@ -236,12 +247,8 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
             # If the key does not have a default or is not the default value
             if key not in _DEFAULT_LOCATIONS or _DEFAULT_LOCATIONS[key] != value:
                 location[key] = value
-        if obj.location:
+        if location:
             dict_obj['location'] = location
-
-        if obj.post_processor:
-            dict_obj['post_processor'] = obj.post_processor[0] \
-                if len(obj.post_processor) == 1 else obj.post_processor
 
         if obj.extra:
             dict_obj['extra'] = obj.extra
@@ -260,12 +267,14 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
         `ProjectFile`
             The decoded project file.
         """
-        return SINGLETON.PROJECT_FILE_TYPES[file['type']].decode(file)
+        return self.registrar.get_project_file_codec(file['type']).decode(file)
 
     def decode(self, obj: DictObject) -> ProjectMetadata:
         return ProjectMetadata(list(map(self.__decode_file, obj['files'])),
             ignore = get_or_default(obj, 'ignore', ProjectMetadata),
             overwrite = get_or_default(obj, 'overwrite', ProjectMetadata),
             location = get_or_default(obj, 'location', ProjectMetadata),
-            post_processor = get_or_default(obj, 'post_processor', ProjectMetadata),
             extra = get_or_default(obj, 'extra', ProjectMetadata))
+
+METADATA_CODEC: ProjectMetadataCodec = ProjectMetadataCodec()
+"""The codec for :class:`prjman.metadata.base.ProjectMetadata`."""
