@@ -5,19 +5,19 @@ to a python file.
 import os
 from glob import iglob
 import subprocess as sp
-from prjman.module import has_module
-from prjman.log import Logger
-from prjman.registrar import PrjmanRegistrar
+from jammies.module import has_module
+from jammies.log import Logger
+from jammies.registrar import JammiesRegistrar
 
 _REGISTRY_NAME: str = 'convert_notebook'
 """The registry name of the post processor."""
 
-def setup(registrar: PrjmanRegistrar) -> None:
+def setup(registrar: JammiesRegistrar) -> None:
     """A setup method used to register components to the project.
     
     Parameters
     ----------
-    registrar : `PrjmanRegistrar`
+    registrar : `JammiesRegistrar`
         The registrar used to register the components for the project.
     """
 

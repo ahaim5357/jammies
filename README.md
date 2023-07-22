@@ -1,6 +1,6 @@
-# prjman
+# jammies
 
-`prjman` is a helper for constructing, managing, and patching projects to better improve and fix the reproducibility of other work.
+`jammies` is a helper for constructing, managing, and patching projects to better improve and fix the reproducibility of other work.
 
 ## Project Files
 
@@ -58,19 +58,19 @@ The `project_metadata.json` generated with each project looks like so:
 
 The following commands can be accessed from the command line interface:
 
-* `prjman patch init [--import_metadata/-I <path_or_url>]`
+* `jammies patch init [--import_metadata/-I <path_or_url>]`
     * Initializes a new project to be patched either from the metadata in the current directory, an import, or provided via the builder.
     * Optional Parameters:
         * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
-* `prjman patch clean [--import_metadata/-I <path_or_url>]`
+* `jammies patch clean [--import_metadata/-I <path_or_url>]`
     * Initializes a clean workspace either from the metadata in the current directory, an import, or provided via the builder.
     * Optional Parameters:
         * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
-* `prjman patch src [--import_metadata/-I <path_or_url>]`
+* `jammies patch src [--import_metadata/-I <path_or_url>]`
     * Initializes a patched workspace either from the metadata in the current directory, an import, or provided via the builder.
     * Optional Parameters:
         * `--import_metadata/-I` - Takes in a path or url to the metadata JSON to build the project for.
-* `prjman patch output`
+* `jammies patch output`
     * Generates any patches from the original files and clones the new files to an output directory.
 
 ## Contributing

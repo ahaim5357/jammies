@@ -9,11 +9,11 @@ import json
 from datetime import datetime
 from urllib.parse import urlparse
 from requests import Response
-from prjman.log import Logger
-from prjman.utils import download_file
-from prjman.defn.metadata import ProjectMetadata, METADATA_CODEC, build_metadata
-from prjman.workspace.patcher import apply_patch, create_patch
-from prjman.config import PrjmanConfig
+from jammies.log import Logger
+from jammies.utils import download_file
+from jammies.defn.metadata import ProjectMetadata, METADATA_CODEC, build_metadata
+from jammies.workspace.patcher import apply_patch, create_patch
+from jammies.config import JammiesConfig
 
 PROJECT_METADATA_NAME: str = 'project_metadata.json'
 """The file name of the project metadata."""
@@ -36,7 +36,7 @@ def read_metadata(dirpath: str = os.curdir, import_loc: str | None = None) -> Pr
     
     Returns
     -------
-    prjman.metadata.base.ProjectMetadata
+    jammies.metadata.base.ProjectMetadata
         The metadata for the current / to-be workspace.
     """
 
@@ -93,7 +93,7 @@ def read_metadata_from_file(path: str) -> ProjectMetadata:
 
     Returns
     -------
-    prjman.metadata.base.ProjectMetadata
+    jammies.metadata.base.ProjectMetadata
         The metadata for the current / to-be workspace.
     """
 
@@ -107,12 +107,12 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
     ----------
     dirpath : str
         The directory to write the project metadata to.
-    metadata : prjman.metadata.base.ProjectMetadata
+    metadata : jammies.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     
     Returns
     -------
-    metadata : prjman.metadata.base.ProjectMetadata
+    metadata : jammies.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     """
 
@@ -122,17 +122,17 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
 
     return metadata
 
-def setup_clean(metadata: ProjectMetadata, logger: Logger, config: PrjmanConfig | None = None,
+def setup_clean(metadata: ProjectMetadata, logger: Logger, config: JammiesConfig | None = None,
         clean_dir: str = 'clean', invalidate_cache: bool = False) -> bool:
     """Generates a clean workspace from the project metadata.
 
     Parameters
     ----------
-    metadata : prjman.metadata.base.ProjectMetadata
+    metadata : jammies.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     logger : `Logger`
         A logger for reporting on information.
-    config : PrjmanConfig | None (default 'None')
+    config : JammiesConfig | None (default 'None')
         The configuration settings.
     clean_dir : str (default 'clean')
         The directory to generate the clean workspace within.
@@ -374,7 +374,7 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = 'clean', working_
     
     Parameters
     ----------
-    metadata : prjman.metadata.base.ProjectMetadata
+    metadata : jammies.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     clean_dir : str (default 'clean')
         The directory containing the raw project files.

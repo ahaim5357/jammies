@@ -4,19 +4,19 @@
 from typing import Set
 from git import Repo
 from git.util import rmtree
-from prjman.utils import get_default, input_with_default, input_yn_default
-from prjman.struct.codec import DictObject
-from prjman.defn.file import ProjectFile, ProjectFileCodec
-from prjman.defn.builder import build_file
-from prjman.registrar import PrjmanRegistrar
-from prjman.internal.file.gitrepo import _REGISTRY_NAME
+from jammies.utils import get_default, input_with_default, input_yn_default
+from jammies.struct.codec import DictObject
+from jammies.defn.file import ProjectFile, ProjectFileCodec
+from jammies.defn.builder import build_file
+from jammies.registrar import JammiesRegistrar
+from jammies.internal.file.gitrepo import _REGISTRY_NAME
 
-def setup_delegate(registrar: PrjmanRegistrar) -> None:
+def setup_delegate(registrar: JammiesRegistrar) -> None:
     """A setup method used to register components to the project.
     
     Parameters
     ----------
-    registrar : `PrjmanRegistrar`
+    registrar : `JammiesRegistrar`
         The registrar used to register the components for the project.
     """
 
@@ -70,12 +70,12 @@ class GitProjectFile(ProjectFile):
         rmtree(self._create_path(root_dir, '.git'))
         return True
 
-def build_git(registrar: PrjmanRegistrar) -> GitProjectFile:
+def build_git(registrar: JammiesRegistrar) -> GitProjectFile:
     """Builds a GitProjectFile from user input.
     
     Parameters
     ----------
-    registrar : `PrjmanRegistrar`
+    registrar : `JammiesRegistrar`
         The registrar used to register the components for the project.
 
     Returns

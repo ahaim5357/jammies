@@ -6,12 +6,12 @@ from typing import List, Tuple, Set, Dict, Callable
 from pathlib import Path
 import shutil
 import fnmatch
-from prjman.log import Logger
-from prjman.registrar import PrjmanRegistrar
-from prjman.defn.file import ProjectFile
-from prjman.struct.codec import DictCodec, DictObject
-from prjman.utils import get_or_default, input_yn_default
-from prjman.config import PrjmanConfig
+from jammies.log import Logger
+from jammies.registrar import JammiesRegistrar
+from jammies.defn.file import ProjectFile
+from jammies.struct.codec import DictCodec, DictObject
+from jammies.utils import get_or_default, input_yn_default
+from jammies.config import JammiesConfig
 
 _DEFAULT_LOCATIONS: Dict[str, str] = {
     'clean': 'clean',
@@ -51,7 +51,7 @@ class ProjectMetadata:
                 self.location[key] = value
         self.extra: DictObject = {} if extra is None else extra
 
-    def __copy_and_log(self, src: str, dst: str, config: PrjmanConfig) -> object:
+    def __copy_and_log(self, src: str, dst: str, config: JammiesConfig) -> object:
         """Copies and logs a generated file.
 
         Parameters
@@ -60,7 +60,7 @@ class ProjectMetadata:
             The source location of the file.
         dst : str
             The destination of the file.
-        config : `PrjmanConfig`
+        config : `JammiesConfig`
             The configuration settings.
         """
 
@@ -68,7 +68,7 @@ class ProjectMetadata:
         config.internal.add_generated_file(dst)
         return output
 
-    def setup(self, root_dir: str, logger: Logger, config: PrjmanConfig | None = None) -> bool:
+    def setup(self, root_dir: str, logger: Logger, config: JammiesConfig | None = None) -> bool:
         """Sets up the project for usage.
 
         Parameters
@@ -77,25 +77,25 @@ class ProjectMetadata:
             The root directory to set up the project in.
         logger : `Logger`
             A logger for reporting on information.
-        config : PrjmanConfig | None (default 'None')
+        config : JammiesConfig | None (default 'None')
             The configuration settings.
         """
 
         # Display warning message if no config is present or the warning message is enabled
         if (not config) or config.project.display_warning_message:
             if not input_yn_default('You are about to download project files from third parties. '
-                + 'prjman and its maintainers are not liable for anything that happens '
+                + 'jammies and its maintainers are not liable for anything that happens '
                 + 'as a result of downloading or using these files. Would you still like to '
                 + 'download these files?', True):
                 return False
             # Ask to disable warning message if config is present
             if config:
-                def _disable_warning_message(conf: PrjmanConfig) -> None:
+                def _disable_warning_message(conf: JammiesConfig) -> None:
                     """Disables the warning message within the config.
                     
                     Parameters
                     ----------
-                    config : PrjmanConfig
+                    config : JammiesConfig
                         The configuration settings.
                     """
                     conf.project.display_warning_message = False
@@ -229,10 +229,10 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
         """
         Parameters
         ----------
-        registrar : `PrjmanRegistrar`
+        registrar : `JammiesRegistrar`
             The registrar used to register the components for the project.
         """
-        self.registrar: PrjmanRegistrar = None
+        self.registrar: JammiesRegistrar = None
 
     def encode(self, obj: ProjectMetadata) -> DictObject:
         dict_obj: DictObject = {}
@@ -277,4 +277,4 @@ class ProjectMetadataCodec(DictCodec[ProjectMetadata]):
             extra = get_or_default(obj, 'extra', ProjectMetadata))
 
 METADATA_CODEC: ProjectMetadataCodec = ProjectMetadataCodec()
-"""The codec for :class:`prjman.metadata.base.ProjectMetadata`."""
+"""The codec for :class:`jammies.metadata.base.ProjectMetadata`."""

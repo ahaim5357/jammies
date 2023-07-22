@@ -3,12 +3,12 @@ the necessary components of the project.
 """
 from typing import TypeAlias, Callable
 from abc import ABC, abstractmethod
-from prjman.defn.file import ProjectFileCodec, ProjectFile, PostProcessor
+from jammies.defn.file import ProjectFileCodec, ProjectFile, PostProcessor
 
-ProjectFileBuilder: TypeAlias = Callable[['PrjmanRegistrar'], ProjectFile]
+ProjectFileBuilder: TypeAlias = Callable[['JammiesRegistrar'], ProjectFile]
 """A supplier used to construct a ProjectFile from an user's input."""
 
-class PrjmanRegistrar(ABC):
+class JammiesRegistrar(ABC):
     """A registrar for the project. Provides endpoints to register file
     handlers and post processors.
     """

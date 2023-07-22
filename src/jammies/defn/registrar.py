@@ -2,23 +2,23 @@
 
 from typing import Dict, Any
 
-from prjman.log import Logger
-from prjman.config import PrjmanConfig
-from prjman.struct.registry import Registry
-from prjman.registrar import PrjmanRegistrar, ProjectFileBuilder
-from prjman.defn.file import ProjectFileCodec, PostProcessor
-from prjman.defn.metadata import METADATA_CODEC
+from jammies.log import Logger
+from jammies.config import JammiesConfig
+from jammies.struct.registry import Registry
+from jammies.registrar import JammiesRegistrar, ProjectFileBuilder
+from jammies.defn.file import ProjectFileCodec, PostProcessor
+from jammies.defn.metadata import METADATA_CODEC
 
-import prjman.internal.file.osf as file_osf
-import prjman.internal.file.url as file_url
-import prjman.internal.file.gitrepo as file_git
-import prjman.internal.postprocessor.unpack as post_unpack
-import prjman.internal.postprocessor.notebook as post_notebook
+import jammies.internal.file.osf as file_osf
+import jammies.internal.file.url as file_url
+import jammies.internal.file.gitrepo as file_git
+import jammies.internal.postprocessor.unpack as post_unpack
+import jammies.internal.postprocessor.notebook as post_notebook
 
 class RegistryError(Exception):
     """Raised when an error occurs when operating on a registry."""
 
-class PrjmanRegistrarImpl(PrjmanRegistrar):
+class JammiesRegistrarImpl(JammiesRegistrar):
     """An implementation of the registrar class used to hold
     the registered instances of the project.
     """
@@ -106,16 +106,16 @@ class PrjmanRegistrarImpl(PrjmanRegistrar):
         """
         self.__stager += 1
 
-REGISTRAR: PrjmanRegistrar = PrjmanRegistrarImpl()
+REGISTRAR: JammiesRegistrar = JammiesRegistrarImpl()
 
-def setup(logger: Logger, config: PrjmanConfig) -> None:
+def setup(logger: Logger, config: JammiesConfig) -> None:
     """Initializes the information within the registrar.
 
     Parameters
     ----------
     logger : `Logger`
         A logger for reporting on information.
-    config : `PrjmanConfig`
+    config : `JammiesConfig`
         The configuration settings.
     """
 

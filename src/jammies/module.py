@@ -88,7 +88,7 @@ def lazy_import(name: str) -> ModuleType:
 
 def dynamic_import(module_type: str, name: str, path: str) -> ModuleType:
     """Dynamically imports a module into the current Python executable.
-    Modules dynamically imported will be prefixed with `prjman.dynamic`,
+    Modules dynamically imported will be prefixed with `jammies.dynamic`,
     followed by the module type and the associated name.
 
     Parameters
@@ -105,7 +105,7 @@ def dynamic_import(module_type: str, name: str, path: str) -> ModuleType:
     ModuleType
         The dynamically loaded module.
     """
-    module_name: str = f'prjman.dynamic.{module_type}.{name}'
+    module_name: str = f'jammies.dynamic.{module_type}.{name}'
 
     return load_module(module_name,
         spec_getter = lambda mdn: spec_from_file_location(mdn, location = path))

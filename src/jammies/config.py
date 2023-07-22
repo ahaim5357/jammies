@@ -9,21 +9,21 @@ from typing import Callable, Any, Tuple, List, Set
 from platformdirs import site_config_dir, user_config_dir
 from tomlkit import table, document, comment, TOMLDocument, load, dump, boolean, array
 from tomlkit.items import Table, Array
-from prjman.log import Logger
-from prjman.registrar import PrjmanRegistrar
-from prjman.struct.codec import DictObject
-from prjman.module import dynamic_import, load_module
+from jammies.log import Logger
+from jammies.registrar import JammiesRegistrar
+from jammies.struct.codec import DictObject
+from jammies.module import dynamic_import, load_module
 
-_ENV_VAR: str = 'PRJMAN_CONFIG_DIR'
+_ENV_VAR: str = 'JAMMIES_CONFIG_DIR'
 """The environment variable pointing to the config directory."""
 
-_CONFIG_DIR: str = 'prjman'
-"""The config directory for prjman."""
+_CONFIG_DIR: str = 'jammies'
+"""The config directory for jammies."""
 
 _SCRIPT_DIR: str = 'scripts'
-"""The script directory for prjman."""
+"""The script directory for jammies."""
 
-_CONFIG_FILE: str = 'prjman.toml'
+_CONFIG_FILE: str = 'jammies.toml'
 """The name of the config file."""
 
 def _project_config(dirpath: str, path : str) -> str:
@@ -105,7 +105,7 @@ def _global_config(path : str) -> str:
     """
     return site_config_dir(os.sep.join([_CONFIG_DIR, path]), appauthor = False, multipath = True)
 
-class PrjmanProjectConfig:
+class JammiesProjectConfig:
     """Configurations within the 'project' table."""
 
     def __init__(self, display_warning_message: bool = True) -> None:
@@ -147,7 +147,7 @@ class PrjmanProjectConfig:
         return project
 
     @classmethod
-    def decode_toml(cls, obj: DictObject) -> 'PrjmanProjectConfig':
+    def decode_toml(cls, obj: DictObject) -> 'JammiesProjectConfig':
         """Decodes the 'project' table.
 
         Parameters
@@ -157,12 +157,12 @@ class PrjmanProjectConfig:
         
         Returns
         -------
-        PrjmanProjectConfig
+        JammiesProjectConfig
             The decoded 'project' table.
         """
-        return PrjmanProjectConfig(**obj)
+        return JammiesProjectConfig(**obj)
 
-class PrjmanInternalConfig:
+class JammiesInternalConfig:
     """Configurations within the 'internal' table."""
 
     def __init__(self, generated: List[str] | None = None) -> None:
@@ -208,7 +208,7 @@ class PrjmanInternalConfig:
         return internal
 
     @classmethod
-    def decode_toml(cls, obj: DictObject) -> 'PrjmanInternalConfig':
+    def decode_toml(cls, obj: DictObject) -> 'JammiesInternalConfig':
         """Decodes the 'internal' table.
 
         Parameters
@@ -218,27 +218,27 @@ class PrjmanInternalConfig:
         
         Returns
         -------
-        PrjmanInternalConfig
+        JammiesInternalConfig
             The decoded 'internal' table.
         """
-        return PrjmanInternalConfig(**obj)
+        return JammiesInternalConfig(**obj)
 
-class PrjmanConfig:
-    """Configurations for prjman."""
+class JammiesConfig:
+    """Configurations for jammies."""
 
-    def __init__(self, project: PrjmanProjectConfig = PrjmanProjectConfig(),
-            internal: PrjmanInternalConfig = PrjmanInternalConfig(),
+    def __init__(self, project: JammiesProjectConfig = JammiesProjectConfig(),
+            internal: JammiesInternalConfig = JammiesInternalConfig(),
             dirpath: str = os.curdir) -> None:
         """
         Parameters
         ----------
-        project : PrjmanProjectConfig (default 'PrjmanProjectConfig()')
+        project : JammiesProjectConfig (default 'JammiesProjectConfig()')
             The 'project' table within the configuration.
         dirpath : str (default '.')
             The root directory of the project.
         """
-        self.project: PrjmanProjectConfig = project
-        self.internal: PrjmanInternalConfig = internal
+        self.project: JammiesProjectConfig = project
+        self.internal: JammiesInternalConfig = internal
         self.dirpath: str = dirpath
 
     def list_vals(self) -> Tuple[bool, str]:
@@ -327,7 +327,7 @@ class PrjmanConfig:
             The encoded configuration.
         """
         doc: TOMLDocument = document()
-        doc.add(comment('The configuration file for prjman'))
+        doc.add(comment('The configuration file for jammies'))
         doc.add('project', self.project.encode_toml())
 
         if write_internal:
@@ -335,7 +335,7 @@ class PrjmanConfig:
         return doc
 
     @classmethod
-    def decode_toml(cls, obj: DictObject) -> 'PrjmanConfig':
+    def decode_toml(cls, obj: DictObject) -> 'JammiesConfig':
         """Decodes the configuration.
 
         Parameters
@@ -345,10 +345,10 @@ class PrjmanConfig:
         
         Returns
         -------
-        PrjmanConfig
+        JammiesConfig
             The decoded configuration.
         """
-        return PrjmanConfig(project = PrjmanProjectConfig.decode_toml(
+        return JammiesConfig(project = JammiesProjectConfig.decode_toml(
                 obj['project'] if 'project' in obj else {}
             ), dirpath = obj['dirpath']
         )
@@ -372,13 +372,13 @@ class PrjmanConfig:
         with open(output_path, mode = 'w', encoding = 'UTF-8') as file:
             dump(self.encode_toml(write_internal = scope == 0), file)
 
-    def update_and_write(self, setter: Callable[['PrjmanConfig'], Any],
+    def update_and_write(self, setter: Callable[['JammiesConfig'], Any],
             save: bool = False) -> None:
         """Updates and writes the value to the project configuration.
         
         Parameter
         ---------
-        setter : (PrjmanConfig) -> None
+        setter : (JammiesConfig) -> None
             A consumer which sets a configuration property.
         save : bool (default 'False')
             When 'True', save the configuration to the project scope.
@@ -387,7 +387,7 @@ class PrjmanConfig:
         if save:
             self.write_config()
 
-    def load_dynamic_scripts(self, logger: Logger, registrar: PrjmanRegistrar) -> int:
+    def load_dynamic_scripts(self, logger: Logger, registrar: JammiesRegistrar) -> int:
         """Loads all scripts within the 'scripts' directories defined by the configuration.
         All scripts with the appropriate 'setup' method will be ran.
 
@@ -395,7 +395,7 @@ class PrjmanConfig:
         ----------
         logger : Logger
             A logger for reporting on information.
-        registrar : `PrjmanRegistrar`
+        registrar : `JammiesRegistrar`
             The registrar used to register the components for the project.
         
         Returns
@@ -482,7 +482,7 @@ class PrjmanConfig:
 
         # Find module path
         if module == 'internal':
-            return getattr(load_module(f'prjman.{module}.{module_type}'), method)
+            return getattr(load_module(f'jammies.{module}.{module_type}'), method)
 
         if (abs_path := _project_config(self.dirpath, rel_path)) and os.path.exists(abs_path):
             module_path = abs_path
@@ -554,7 +554,7 @@ def _read_and_update_dict(original: DictObject, path: str | None) -> DictObject:
             original = _update_dict(original, load(file))
     return original
 
-def load_config(dirpath: str = os.curdir) -> PrjmanConfig:
+def load_config(dirpath: str = os.curdir) -> JammiesConfig:
     """Loads the configuration for the project. Any settings that are not
     overridden by the project gets merged from the environment variable,
     virtual environment if present, user, and finally the global scope.
@@ -566,7 +566,7 @@ def load_config(dirpath: str = os.curdir) -> PrjmanConfig:
     
     Returns
     -------
-    PrjmanConfig
+    JammiesConfig
         The loaded configuration.
     """
     # Get project config
@@ -586,7 +586,7 @@ def load_config(dirpath: str = os.curdir) -> PrjmanConfig:
 
     # Set current project directory
     config['dirpath'] = dirpath
-    return PrjmanConfig.decode_toml(config)
+    return JammiesConfig.decode_toml(config)
 
 def config_loc(dirpath: str = os.curdir, scope: int = 0) -> str:
     """Gets the location of the configuration in the specified scope.

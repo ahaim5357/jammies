@@ -3,25 +3,25 @@
 
 import os
 import subprocess as sp
-from prjman.module import load_module, has_module
-from prjman.registrar import PrjmanRegistrar
+from jammies.module import load_module, has_module
+from jammies.registrar import JammiesRegistrar
 
 _REGISTRY_NAME: str = 'git'
 """The registry name of the project file handler."""
 
-def setup(registrar: PrjmanRegistrar) -> None:
+def setup(registrar: JammiesRegistrar) -> None:
     """A setup method used to register components to the project.
     
     Parameters
     ----------
-    registrar : `PrjmanRegistrar`
+    registrar : `JammiesRegistrar`
         The registrar used to register the components for the project.
     """
 
     # Check if git is present on the machine
     if sp.run(['git', '--help'], check = False, stdout = sp.DEVNULL).returncode == 0 \
             and has_module('git'):
-        load_module('prjman.internal.file.delegate.gitrepo').setup_delegate(registrar)
+        load_module('jammies.internal.file.delegate.gitrepo').setup_delegate(registrar)
     else:
         registrar.add_file_handler_missing_message(_REGISTRY_NAME,
             'git, and/or the corresponding Python library, is not installed'
@@ -32,5 +32,5 @@ def setup(registrar: PrjmanRegistrar) -> None:
             + ' following commands:'
             + os.linesep
             + '-> pip install GitPython>=3.1' + os.linesep
-            + '-> pip install prjman[git]'
+            + '-> pip install jammies[git]'
         )

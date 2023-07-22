@@ -5,9 +5,9 @@ from the metadata.
 import os
 from typing import TypeVar, List, Callable, Tuple, TypeAlias
 from abc import ABC, abstractmethod
-from prjman.log import Logger
-from prjman.utils import get_default, get_or_default
-from prjman.struct.codec import DictObject, DictCodec
+from jammies.log import Logger
+from jammies.utils import get_default, get_or_default
+from jammies.struct.codec import DictObject, DictCodec
 
 PostProcessor: TypeAlias = Callable[[Logger, str], bool]
 """A method which takes in the directory to execute within and returns
@@ -111,7 +111,7 @@ class ProjectFileCodec(DictCodec[PF]):
 
         Parameters
         ----------
-        registrar : `PrjmanRegistrar`
+        registrar : `JammiesRegistrar`
             The registrar used to register the components for the project.
         """
         self.registrar = registrar

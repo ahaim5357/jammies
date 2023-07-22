@@ -2,18 +2,18 @@
 project.
 """
 
-from prjman.struct.codec import DictObject
-from prjman.defn.file import ProjectFile, ProjectFileCodec
-from prjman.defn.builder import build_file
-from prjman.utils import download_and_write
-from prjman.registrar import PrjmanRegistrar
+from jammies.struct.codec import DictObject
+from jammies.defn.file import ProjectFile, ProjectFileCodec
+from jammies.defn.builder import build_file
+from jammies.utils import download_and_write
+from jammies.registrar import JammiesRegistrar
 
-def setup(registrar: PrjmanRegistrar) -> None:
+def setup(registrar: JammiesRegistrar) -> None:
     """A setup method used to register components to the project.
     
     Parameters
     ----------
-    registrar : `PrjmanRegistrar`
+    registrar : `JammiesRegistrar`
         The registrar used to register the components for the project.
     """
 
@@ -47,12 +47,12 @@ class OSFProjectFile(ProjectFile):
         super().setup(root_dir)
         return download_and_write(self.__url, out_dir = self._create_path(root_dir))
 
-def build_osf(registrar: PrjmanRegistrar) -> OSFProjectFile:
+def build_osf(registrar: JammiesRegistrar) -> OSFProjectFile:
     """Builds an OSFProjectFile from user input.
     
     Parameters
     ----------
-    registrar : `PrjmanRegistrar`
+    registrar : `JammiesRegistrar`
         The registrar used to register the components for the project.
 
     Returns

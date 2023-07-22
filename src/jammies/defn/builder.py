@@ -1,24 +1,24 @@
 """TODO: Document, implement, finish"""
 
 from typing import TypeAlias, Callable, TypeVar, List, Tuple
-from prjman.registrar import PrjmanRegistrar
-from prjman.defn.file import ProjectFile, PostProcessor
-from prjman.struct.codec import DictObject
-from prjman.utils import input_with_default, input_yn_default
+from jammies.registrar import JammiesRegistrar
+from jammies.defn.file import ProjectFile, PostProcessor
+from jammies.struct.codec import DictObject
+from jammies.utils import input_with_default, input_yn_default
 
-ProjectFileBuilder: TypeAlias = Callable[[PrjmanRegistrar], ProjectFile]
+ProjectFileBuilder: TypeAlias = Callable[[JammiesRegistrar], ProjectFile]
 """A supplier used to construct a ProjectFile from an user's input."""
 
 PF = TypeVar('PF', bound = ProjectFile)
 """The type of the project file."""
 
-def build_file(registrar: PrjmanRegistrar, codec_name: str, callback: Callable[[DictObject], PF]) -> PF:
+def build_file(registrar: JammiesRegistrar, codec_name: str, callback: Callable[[DictObject], PF]) -> PF:
     """Builds a ProjectFile from user input based on the
     passed in callback.
     
     Parameters
     ----------
-    registrar : `PrjmanRegistrar`
+    registrar : `JammiesRegistrar`
         The registrar used to register the components for the project.
     codec_name : str
         The name of the codec for the project file.

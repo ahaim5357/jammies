@@ -5,11 +5,11 @@ import os
 from typing import List
 import click
 from tomlkit import load as load_toml
-import prjman.workspace.project as wspc
-from prjman.defn.registrar import setup as setup_registrar
-from prjman.defn.metadata import ProjectMetadata
-from prjman.config import PrjmanConfig, load_config, config_loc as cloc
-from prjman.log import Logger
+import jammies.workspace.project as wspc
+from jammies.defn.registrar import setup as setup_registrar
+from jammies.defn.metadata import ProjectMetadata
+from jammies.config import JammiesConfig, load_config, config_loc as cloc
+from jammies.log import Logger
 
 # TODO: REDO
 
@@ -46,8 +46,8 @@ def _check_project_config(logger: Logger, dirpath: str) -> bool:
         logger.error(
             f'No project exists at \'{prj_path}\'. ' \
             + 'Create a project using one of the following commands:',
-            '-> prjman project init',
-            '-> prjman patch   init',
+            '-> jammies project init',
+            '-> jammies patch   init',
             sep = '\n'
         )
         return False
@@ -71,7 +71,7 @@ def config_create(project: bool = False, site: bool = False,
     """
     # Create config object to write
     logger: Logger = Logger(verbose = verbose)
-    prj_config: PrjmanConfig = PrjmanConfig()
+    prj_config: JammiesConfig = JammiesConfig()
     setup_registrar(logger, prj_config)
 
     configs_written: bool = False
@@ -159,7 +159,7 @@ def config_loc(open_dir: bool = False, scope: str = 'project') -> None:
     else:
         logger.error(
             f'No config for {scope}. Create the config using:',
-            f'-> prjman config create --{scope}',
+            f'-> jammies config create --{scope}',
             sep = '\n'
         )
 
@@ -167,7 +167,7 @@ def config_loc(open_dir: bool = False, scope: str = 'project') -> None:
 def config_list() -> None:
     """Lists all available configuration options."""
     logger: Logger = Logger()
-    prj_config: PrjmanConfig = PrjmanConfig()
+    prj_config: JammiesConfig = JammiesConfig()
     top_message: List[str] = ['Available config options']
     top_message += map(lambda s: f'-> {s}', prj_config.list_vals())
     logger.success(
@@ -205,17 +205,17 @@ def config_value(name: str, value: str | None = None, scope: str = 'project') ->
     if not os.path.exists(config_path := cloc(scope = scope_val)):
         logger.error(
             f'No config for {scope}. Create the config using:',
-            f'-> prjman config create --{scope}',
+            f'-> jammies config create --{scope}',
             sep = '\n'
         )
         return
 
     # Load config scope
-    prj_config: PrjmanConfig = None
+    prj_config: JammiesConfig = None
     with open(config_path, mode = 'r', encoding = 'UTF-8') as file:
         prj_config = load_toml(file)
         prj_config['dirpath'] = os.curdir
-        prj_config = PrjmanConfig.decode_toml(prj_config)
+        prj_config = JammiesConfig.decode_toml(prj_config)
 
     # If a value is present, set it within the config
     if value:
@@ -258,7 +258,7 @@ def init(import_metadata: str | None = None, include_hidden: bool = False) -> No
 
     # Read config
     logger: Logger = Logger()
-    prj_config: PrjmanConfig = load_config()
+    prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
 
     # Get metadata
@@ -284,7 +284,7 @@ def output() -> None:
 
     # Read config
     logger: Logger = Logger()
-    prj_config: PrjmanConfig = load_config()
+    prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
 
     # Get metadata
@@ -315,7 +315,7 @@ def clean(import_metadata: str | None = None) -> None:
 
     # Read config
     logger: Logger = Logger()
-    prj_config: PrjmanConfig = load_config()
+    prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
 
     # Get metadata
@@ -344,7 +344,7 @@ def source(import_metadata: str | None = None) -> None:
 
     # Read config
     logger: Logger = Logger()
-    prj_config: PrjmanConfig = load_config()
+    prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
 
     # Get metadata
