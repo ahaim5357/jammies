@@ -28,7 +28,8 @@ issue_tracker = "https://github.com/ahaim5357/project-patcher/issues"
 
 [project.optional-dependencies]
 git = ["GitPython>=3.1"]
-all = ["jammies[git]"]
+notebook = ["nbconvert>=7"]
+all = ["jammies[git,notebook]"]
 
 [tools.setuptools.packages.find]
 where = ["src"]
