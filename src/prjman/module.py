@@ -7,6 +7,21 @@ from typing import Callable
 from importlib.machinery import ModuleSpec
 from importlib.util import find_spec, LazyLoader, module_from_spec, spec_from_file_location
 
+def has_module(name: str) -> bool:
+    """Checks whether the module is currently loaded or can be added to the current workspace.
+
+    Parameters
+    ----------
+    name : str
+        The name of the module.
+
+    Returns
+    -------
+    bool
+        `True` if the module exists, `False` otherwise.
+    """
+    return (name in sys.modules) or (find_spec(name) is not None)
+
 def load_module(module_name: str,
         spec_getter: Callable[[str], ModuleSpec] = find_spec) -> ModuleType:
     """Loads a module based on its name and getter for the spec.
@@ -35,7 +50,7 @@ def load_module(module_name: str,
     spec.loader.exec_module(module)
     return module
 
-def _lazy_import(name: str) -> ModuleType:
+def lazy_import(name: str) -> ModuleType:
     """Sets up the module to be lazily imported if it is not already loaded.
 
     Parameters
@@ -70,9 +85,6 @@ def _lazy_import(name: str) -> ModuleType:
         return spec
 
     return load_module(name, spec_getter = _set_lazy)
-
-SINGLETON: ModuleType = _lazy_import('prjman.singleton')
-"""The prjman.singleton module added as a lazy import."""
 
 def dynamic_import(module_type: str, name: str, path: str) -> ModuleType:
     """Dynamically imports a module into the current Python executable.

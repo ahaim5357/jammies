@@ -1,10 +1,8 @@
 """A script containing helper methods used throughout the package.
 """
 
-import sys
 import os
 import re
-from importlib.util import find_spec
 import inspect
 from typing import Any, Dict, Callable, TypeVar, Tuple
 from io import IOBase, BytesIO
@@ -104,28 +102,11 @@ def input_yn_default(text: str, yes_or_no: bool) -> bool:
 
     while True:
         if yn_input := input(input_string):
-            if (yn := yn_input.lower()[0]) in ['y', 'n']:
-                return yn != 'n'
-            else:
-                print('Answer provided was not y/n, please input y/n.')
-                continue
-        else:
-            return yes_or_no
-
-def has_module(name: str) -> bool:
-    """Checks whether the module is currently loaded or can be added to the current workspace.
-
-    Parameters
-    ----------
-    name : str
-        The name of the module.
-
-    Returns
-    -------
-    bool
-        `True` if the module exists, `False` otherwise.
-    """
-    return (name in sys.modules) or (find_spec(name) is not None)
+            if (yes_no := yn_input.lower()[0]) in ['y', 'n']:
+                return yes_no != 'n'
+            print('Answer provided was not y/n, please input y/n.')
+            continue
+        return yes_or_no
 
 def unzip(file: str | IOBase, out_dir: str = os.curdir) -> None:
     """Unzips the file or stream to the specified directory.
@@ -192,10 +173,10 @@ def download_file(url: str, handler: Callable[[requests.Response, str], bool],
 
         ## Lookup filename from content disposition if present
         if _CONTENT_DISPOSITION in response.headers:
-            if 'filename*' in (disp := response.headers[_CONTENT_DISPOSITION]):
-                filename: str = re.findall(_FILENAME_STAR_PARAM_REGEX, disp)[0]
-            elif 'filename' in disp:
-                matches: Tuple[str, str] = re.findall(_FILENAME_PARAM_REGEX, disp)[0]
+            if 'filename*' in (disposition := response.headers[_CONTENT_DISPOSITION]):
+                filename: str = re.findall(_FILENAME_STAR_PARAM_REGEX, disposition)[0]
+            elif 'filename' in disposition:
+                matches: Tuple[str, str] = re.findall(_FILENAME_PARAM_REGEX, disposition)[0]
                 filename: str = matches[0] if matches[0] else matches[1]
 
         # Set to basename of path if not present

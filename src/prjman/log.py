@@ -3,7 +3,7 @@
 
 from typing import List
 
-def _log(header: str, *args, **kwargs):
+def _log(header: str, *args, **kwargs) -> None:
     """A general logger which applies a header
     to the first message. All other parameters
     are the same as `print`.
@@ -29,19 +29,21 @@ class Logger:
         """
         self.verbose: bool = verbose
 
-    def skip(self, *args, **kwargs):
+    def skip(self, *args, **kwargs) -> None:
         """Prefixes 'Skip' in front of a message."""
         _log('Skip', *args, **kwargs)
 
-    def error(self, *args, **kwargs):
+    def error(self, *args, **kwargs) -> bool:
         """Prefixes 'Error' in front of a message."""
         _log('Error', *args, **kwargs)
+        return False
 
-    def success(self, *args, **kwargs):
+    def success(self, *args, **kwargs) -> bool:
         """Prefixes 'Success' in front of a message."""
         _log('Success', *args, **kwargs)
+        return True
 
-    def debug(self, *args, **kwargs):
+    def debug(self, *args, **kwargs) -> None:
         """Prefixes 'Debug' in front of a message if
         verbose is enabled."""
         if self.verbose:

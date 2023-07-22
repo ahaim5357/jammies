@@ -6,7 +6,8 @@ from typing import List
 import click
 from tomlkit import load as load_toml
 import prjman.workspace.project as wspc
-from prjman.metadata import ProjectMetadata
+from prjman.defn.registrar import setup as setup_registrar
+from prjman.defn.metadata import ProjectMetadata
 from prjman.config import PrjmanConfig, load_config, config_loc as cloc
 from prjman.log import Logger
 
@@ -71,6 +72,8 @@ def config_create(project: bool = False, site: bool = False,
     # Create config object to write
     logger: Logger = Logger(verbose = verbose)
     prj_config: PrjmanConfig = PrjmanConfig()
+    setup_registrar(logger, prj_config)
+
     configs_written: bool = False
 
     # Check if project is wanted or no config option is specified
@@ -254,7 +257,9 @@ def init(import_metadata: str | None = None, include_hidden: bool = False) -> No
     """
 
     # Read config
+    logger: Logger = Logger()
     prj_config: PrjmanConfig = load_config()
+    setup_registrar(logger, prj_config)
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(dirpath = prj_config.dirpath,
@@ -265,7 +270,7 @@ def init(import_metadata: str | None = None, include_hidden: bool = False) -> No
     out_dir = metadata.location['out']
 
     # Setup workspace
-    if wspc.setup_clean(metadata, config = prj_config, clean_dir = clean_dir):
+    if wspc.setup_clean(metadata, logger, config = prj_config, clean_dir = clean_dir):
         wspc.setup_working(clean_dir = clean_dir, working_dir = working_dir,
             patch_dir = patch_dir, out_dir = out_dir, include_hidden = include_hidden)
         print('Initialized patching environment!')
@@ -278,7 +283,9 @@ def output() -> None:
     directory."""
 
     # Read config
+    logger: Logger = Logger()
     prj_config: PrjmanConfig = load_config()
+    setup_registrar(logger, prj_config)
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(dirpath = prj_config.dirpath)
@@ -307,7 +314,9 @@ def clean(import_metadata: str | None = None) -> None:
     """
 
     # Read config
+    logger: Logger = Logger()
     prj_config: PrjmanConfig = load_config()
+    setup_registrar(logger, prj_config)
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(dirpath = prj_config.dirpath,
@@ -315,7 +324,7 @@ def clean(import_metadata: str | None = None) -> None:
     clean_dir = metadata.location['clean']
 
     # Setup workspace
-    if wspc.setup_clean(metadata, config = prj_config, clean_dir = clean_dir):
+    if wspc.setup_clean(metadata, logger, config = prj_config, clean_dir = clean_dir):
         print('Setup clean workspace!')
     else:
         print('Could not generate clean workspace.')
@@ -334,7 +343,9 @@ def source(import_metadata: str | None = None) -> None:
     """
 
     # Read config
+    logger: Logger = Logger()
     prj_config: PrjmanConfig = load_config()
+    setup_registrar(logger, prj_config)
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(dirpath = prj_config.dirpath,
@@ -344,7 +355,7 @@ def source(import_metadata: str | None = None) -> None:
     out_dir = metadata.location['out']
 
     # Setup workspace
-    if wspc.setup_clean(metadata, config = prj_config, clean_dir = working_dir,
+    if wspc.setup_clean(metadata, logger, config = prj_config, clean_dir = working_dir,
             invalidate_cache = True):
         wspc.setup_working_raw(working_dir = working_dir,
             patch_dir = patch_dir, out_dir = out_dir)
