@@ -1,19 +1,17 @@
 """A script containing helper methods used throughout the package.
 """
 
-import sys
 import os
 import re
-from importlib.util import find_spec
 import inspect
-from typing import Optional, Any, Dict, Callable, Union
+from typing import Any, Dict, Callable, TypeVar, Tuple
 from io import IOBase, BytesIO
-from uuid import uuid4
 from mimetypes import guess_extension
 from zipfile import ZipFile
+from urllib.parse import urlparse
 import requests
 
-def get_default(func: Callable[..., Any], param: str) -> Optional[Any]:
+def get_default(func: Callable[..., Any], param: str) -> Any | None:
     """Gets the default value of a function parameter, or `None` if not applicable.
     
     Parameters
@@ -32,7 +30,7 @@ def get_default(func: Callable[..., Any], param: str) -> Optional[Any]:
     return None if param_sig.default is inspect.Parameter.empty else param_sig.default
 
 def get_or_default(dict_obj: Dict[str, Any], key: str, func: Callable[..., Any],
-        param: Optional[str] = None) -> Optional[Any]:
+        param: str | None = None) -> Any | None:
     """Gets the value within a dictionary, or the default from the function if none is specified.
 
     Parameters
@@ -56,22 +54,61 @@ def get_or_default(dict_obj: Dict[str, Any], key: str, func: Callable[..., Any],
 
     return dict_obj[key] if key in dict_obj else get_default(func, param)
 
-def has_module(name: str) -> bool:
-    """Checks whether the module is currently loaded or can be added to the current workspace.
+I = TypeVar('I')
+"""The type of the input."""
 
+def input_with_default(func: Callable[..., Any], param: str, text: str) -> I:
+    """Read a string from standard input and defaults if no value is specified.
+    
     Parameters
     ----------
-    name : str
-        The name of the module.
+    func : Callable[..., Any]
+        The function to check.
+    param : str
+        The name of the parameter.
+    text : str
+        The text to display for input.
 
     Returns
     -------
-    bool
-        `True` if the module exists, `False` otherwise.
+    Any
+        The input, or the default when not specified.
     """
-    return (name in sys.modules) or (find_spec(name) is not None)
+    def_val: I = get_default(func, param)
+    val: I = input(f"{text} (default '{def_val}'): ")
+    return val if val else def_val
 
-def unzip(file: Union[str, IOBase], out_dir: str = os.curdir) -> None:
+def input_yn_default(text: str, yes_or_no: bool) -> bool:
+    """Accepts an input of a yes / no answer which defaults to the
+    specified value.
+
+    Parameters
+    ----------
+    text: str
+        The text to display for input.
+    yes_or_no: bool
+        When `True`, the input will default to 'yes'.
+    
+    Returns
+    -------
+    bool
+        `True` if the input said 'yes'.
+    """
+    def cap_when_true(text: str, cap: bool) -> str:
+        return text.capitalize() if cap else text
+
+    input_string: str = f"{text} ({cap_when_true('y', yes_or_no)}" \
+        + f"/{cap_when_true('n', not yes_or_no)})? "
+
+    while True:
+        if yn_input := input(input_string):
+            if (yes_no := yn_input.lower()[0]) in ['y', 'n']:
+                return yes_no != 'n'
+            print('Answer provided was not y/n, please input y/n.')
+            continue
+        return yes_or_no
+
+def unzip(file: str | IOBase, out_dir: str = os.curdir) -> None:
     """Unzips the file or stream to the specified directory.
 
     Parameters
@@ -84,10 +121,16 @@ def unzip(file: Union[str, IOBase], out_dir: str = os.curdir) -> None:
     with ZipFile(file, 'r') as zip_ref: # type: ZipFile
         zip_ref.extractall(out_dir)
 
-_FILENAME_REGEX: str = \
-    r'filename\*?=(?:\"([^\'\"\n;]+)\"|(?:(?:UTF-8|ISO-8859-1|[^\'\"])\'[^\'\"]?\')([^\'\"\n;]+));?'
-"""Regex for getting the filename from the content-disposition header.
-Tries to read normal filename and a fuzzy regex of the
+_FILENAME_PARAM_REGEX: str = \
+    r'filename=(?:([A-Za-z0-9\!\#\$\%\&\'\*\+\-\.\^\_\`\|\~]+)|(?:\"([^\"]*)\"))'
+"""Regex for getting the filename from the content-disposition header using the
+[RFC6266](https://datatracker.ietf.org/doc/html/rfc6266#section-4.1) spec.
+"""
+
+_FILENAME_STAR_PARAM_REGEX: str = \
+    r'filename\*=(?:[A-Za-z0-9\!\#\$\%\&\+\-\^\_\`\{\}\~]+)\'[A-Za-z0-9\%\-]*\'' \
+        + r'((?:%[0-9A-Fa-f]{2}|[A-Za-z0-9\!\#\$\%\&\+\-\.\^\_\`\|\~])*)'
+"""Regex for getting the filename* from the content-disposition header using the
 [RFC8187](https://datatracker.ietf.org/doc/html/rfc8187) spec.
 """
 
@@ -126,28 +169,27 @@ def download_file(url: str, handler: Callable[[requests.Response, str], bool],
             return False
 
         # Get filename
-        filename: Optional[str] = None
+        filename: str | None = None
 
         ## Lookup filename from content disposition if present
         if _CONTENT_DISPOSITION in response.headers:
-            for filename_lookup in re.findall(_FILENAME_REGEX,
-                    response.headers[_CONTENT_DISPOSITION]): # type: Tuple[str, str]
-                # If filename* is present, set and then break
-                if (name := filename_lookup[1]): # name: str
-                    filename = name
-                    break
-                # Otherwise, set the normal filename and keep checking
-                filename = filename_lookup[0]
+            if 'filename*' in (disposition := response.headers[_CONTENT_DISPOSITION]):
+                filename: str = re.findall(_FILENAME_STAR_PARAM_REGEX, disposition)[0]
+            elif 'filename' in disposition:
+                matches: Tuple[str, str] = re.findall(_FILENAME_PARAM_REGEX, disposition)[0]
+                filename: str = matches[0] if matches[0] else matches[1]
 
-        ## If no filename was present, assign a default name
-        if filename is None:
-            filename: str = str(uuid4())
-            # Set file extension from content type, if available
-            if _CONTENT_TYPE in response.headers:
-                if (ext := guess_extension(
-                        response.headers[_CONTENT_TYPE].partition(';')[0].strip()
-                    )) is not None: # ext: Optional[str]
-                    filename += ext
+        # Set to basename of path if not present
+        if not filename:
+            filename = os.path.basename(urlparse(url).path)
+
+        # Check to see if extension is present
+        name, ext = os.path.splitext(filename)
+
+        # If no extension is present and we have access to the content type
+        if not ext and _CONTENT_TYPE in response.headers:
+            filename = name + guess_extension(response.headers[_CONTENT_TYPE]
+                .partition(';')[0].strip())
 
         # Handle the result of the downloaded file
         return handler(response, filename)

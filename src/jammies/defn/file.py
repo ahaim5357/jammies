@@ -3,32 +3,55 @@ from the metadata.
 """
 
 import os
-from typing import TypeVar, List, Callable, Optional
+from typing import TypeVar, List, Callable, Tuple, TypeAlias
 from abc import ABC, abstractmethod
-from project_patcher.lazy import SINGLETON
-from project_patcher.utils import get_default, get_or_default
-from project_patcher.struct.codec import DictObject, DictCodec
+from jammies.log import Logger
+from jammies.utils import get_default, get_or_default
+from jammies.struct.codec import DictObject, DictCodec
+
+PostProcessor: TypeAlias = Callable[[Logger, str], bool]
+"""A method which takes in the directory to execute within and returns
+a boolean represent whether the execution was successful.
+"""
 
 class ProjectFile(ABC):
     """An abstract class containing information about a file associated with the project.
     """
 
     @abstractmethod
-    def __init__(self, rel_dir: str = os.curdir,
-            extra: Optional[DictObject] = None) -> None:
+    def __init__(self, codec: 'ProjectFileCodec',
+            name: str = "", rel_dir: str = os.curdir,
+            post_processor: Tuple[PostProcessor, DictObject] | None = None,
+            extra: DictObject | None = None) -> None:
         """
         Parameters
         ----------
+        name : str (default '')
+            The name of the project file.
         rel_dir : str (default '.')
             The directory the project file is located.
-        extra : dict[str, Any]
+        post_processor : `PostProcessor`, `DictObject` (default `None`)
+            The post processor to apply to the project file with any additional metadata.
+        extra : dict[str, Any] (default `None`)
             Extra data defined by the user.
         """
         super().__init__()
+        self._codec: 'ProjectFileCodec' = codec
+        self.name: str = name
         self.dir: str = rel_dir
+        self.post_processor: Tuple[PostProcessor, DictObject] = post_processor
         self.extra: DictObject = {} if extra is None else extra
 
     @abstractmethod
+    def registry_name(self) -> str:
+        """Returns the registered name of the project file.
+
+        Returns
+        -------
+        str
+            The registered name of the project file.
+        """
+
     def codec(self) -> 'ProjectFileCodec':
         """Returns the codec used to encode and decode this project file.
 
@@ -37,6 +60,7 @@ class ProjectFile(ABC):
         ProjectFileCodec
             The codec used to encode and decode this project file.
         """
+        return self._codec
 
     @abstractmethod
     def setup(self, root_dir: str) -> bool:
@@ -73,26 +97,6 @@ class ProjectFile(ABC):
 PF = TypeVar('PF', bound = ProjectFile)
 """The type of the project file."""
 
-def build_file(callback: Callable[[str], PF]) -> PF:
-    """Builds a ProjectFile from user input based on the
-    passed in callback.
-    
-    Parameters
-    ----------
-    callback : (str) -> ProjectFile
-        A function that takes in the root directory of the ProjectFile
-        and returns the completed ProjectFile.
-    
-    Returns
-    -------
-    ProjectFile
-        The built project file.
-    """
-    def_rel_dir: str = get_default(ProjectFile, 'rel_dir')
-    rel_dir: str = \
-        input(f"Directory to extract to (default '{def_rel_dir}'): ")
-    return callback(rel_dir if rel_dir else def_rel_dir)
-
 class ProjectFileCodec(DictCodec[PF]):
     """An abstract, generic encoder and decoder between a dictionary and a ProjectFile.
 
@@ -102,18 +106,49 @@ class ProjectFileCodec(DictCodec[PF]):
         The type of the project file to be encoded or decoded to.
     """
 
+    def __init__(self, registrar) -> None:
+        """Initializes a codec for a `ProjectFile`.
+
+        Parameters
+        ----------
+        registrar : `JammiesRegistrar`
+            The registrar used to register the components for the project.
+        """
+        self.registrar = registrar
+
     def decode(self, obj: DictObject) -> PF:
-        return self.decode_type(get_or_default(obj, 'dir', ProjectFile, param = 'rel_dir'),
-            get_or_default(obj, 'extra', ProjectFile), obj)
+        return self.decode_type(obj,
+            name = get_or_default(obj, 'name', ProjectFile),
+            rel_dir = get_or_default(obj, 'dir', ProjectFile, param = 'rel_dir'),
+            post_processor = self.__decode_post_processor(
+                get_or_default(obj, 'post_processor', ProjectFile)
+            ),
+            extra = get_or_default(obj, 'extra', ProjectFile)
+        )
+
+    def __decode_post_processor(self,
+            post_processor: DictObject | None) -> Tuple[PostProcessor, DictObject]:
+        """Decodes a post processor from its object.
+
+        Parameters
+        ----------
+        post_processor : `DictObject`
+            The encoded post processor.
+        
+        Returns
+        -------
+        (`PostProcessor`, `DictObject`)
+            The post processor and its additional parameters.
+        """
+        return (self.registrar.get_post_processor(post_processor['type']), post_processor) \
+            if post_processor is not None else None
 
     @abstractmethod
-    def decode_type(self, rel_dir: str, extra: Optional[DictObject], obj: DictObject) -> PF:
+    def decode_type(self, obj: DictObject, **kwargs: DictObject) -> PF:
         """Decodes a dictionary to the specific ProjectFile type.
 
         Parameters
         ----------
-        rel_dir : str
-            The directory the ProjectFile is located.
         obj : Dict[str, Any]
             The dictionary containing the data for the ProjectFile.
 
@@ -125,9 +160,13 @@ class ProjectFileCodec(DictCodec[PF]):
 
     def encode(self, obj: PF) -> DictObject:
         dict_obj: DictObject = {}
-        dict_obj['type'] = SINGLETON.PROJECT_FILE_TYPES.get_key(self)
+        dict_obj['type'] = obj.registry_name()
+        if obj.name:
+            dict_obj['name'] = obj.name
         if obj.dir != get_default(ProjectFile, 'rel_dir'):
             dict_obj['dir'] = obj.dir
+        if obj.post_processor:
+            dict_obj['post_processor'] = obj.post_processor[1]
         if obj.extra:
             dict_obj['extra'] = obj.extra
 

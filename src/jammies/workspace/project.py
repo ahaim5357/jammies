@@ -7,15 +7,15 @@ from pathlib import PurePath
 import shutil
 import json
 from datetime import datetime
-from typing import Optional
 from urllib.parse import urlparse
 from requests import Response
-from project_patcher.singleton import METADATA_CODEC, METADATA_BUILDER
-from project_patcher.utils import download_file
-from project_patcher.metadata.base import ProjectMetadata
-from project_patcher.workspace.patcher import apply_patch, create_patch
+from jammies.log import Logger
+from jammies.utils import download_file
+from jammies.defn.metadata import ProjectMetadata, METADATA_CODEC, build_metadata
+from jammies.workspace.patcher import apply_patch, create_patch
+from jammies.config import JammiesConfig
 
-_PROJECT_METADATA_NAME: str = 'project_metadata.json'
+PROJECT_METADATA_NAME: str = 'project_metadata.json'
 """The file name of the project metadata."""
 
 _PATCH_EXTENSION: str = 'patch'
@@ -24,8 +24,7 @@ _PATCH_EXTENSION: str = 'patch'
 _TMP_DIR: str = '.tmp'
 """The directory for temporary files or directories."""
 
-# TODO: Expand to read metadata inside another json object
-def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) -> ProjectMetadata:
+def read_metadata(dirpath: str = os.curdir, import_loc: str | None = None) -> ProjectMetadata:
     """Creates or reads project metadata for the current / to-be workspace.
 
     Parameters
@@ -37,7 +36,7 @@ def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) ->
     
     Returns
     -------
-    project_patcher.metadata.base.ProjectMetadata
+    jammies.metadata.base.ProjectMetadata
         The metadata for the current / to-be workspace.
     """
 
@@ -78,11 +77,11 @@ def read_metadata(dirpath: str = os.curdir, import_loc: Optional[str] = None) ->
             return write_metadata_to_file(dirpath, read_metadata_from_file(import_loc))
 
     # If none, check if project metadata exists in directory
-    if os.path.exists((path := os.sep.join([dirpath, _PROJECT_METADATA_NAME]))):
+    if os.path.exists((path := os.sep.join([dirpath, PROJECT_METADATA_NAME]))):
         return read_metadata_from_file(path)
 
     # Otherwise, open the builder
-    return write_metadata_to_file(dirpath, METADATA_BUILDER())
+    return write_metadata_to_file(dirpath, build_metadata())
 
 def read_metadata_from_file(path: str) -> ProjectMetadata:
     """Reads a project metadata from a file location.
@@ -94,7 +93,7 @@ def read_metadata_from_file(path: str) -> ProjectMetadata:
 
     Returns
     -------
-    project_patcher.metadata.base.ProjectMetadata
+    jammies.metadata.base.ProjectMetadata
         The metadata for the current / to-be workspace.
     """
 
@@ -108,30 +107,34 @@ def write_metadata_to_file(dirpath: str, metadata: ProjectMetadata) -> ProjectMe
     ----------
     dirpath : str
         The directory to write the project metadata to.
-    metadata : project_patcher.metadata.base.ProjectMetadata
+    metadata : jammies.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     
     Returns
     -------
-    metadata : project_patcher.metadata.base.ProjectMetadata
+    metadata : jammies.metadata.base.ProjectMetadata
         The metadata for the current workspace.
     """
 
-    with open(os.sep.join([dirpath, _PROJECT_METADATA_NAME]),
+    with open(os.sep.join([dirpath, PROJECT_METADATA_NAME]),
             mode = 'w', encoding = 'UTF-8') as file:
         print(json.dumps(METADATA_CODEC.encode(metadata), indent = 4), file = file)
 
     return metadata
 
-def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
-        invalidate_cache: bool = False) -> bool:
+def setup_clean(metadata: ProjectMetadata, logger: Logger, config: JammiesConfig | None = None,
+        clean_dir: str = 'clean', invalidate_cache: bool = False) -> bool:
     """Generates a clean workspace from the project metadata.
 
     Parameters
     ----------
-    metadata : project_patcher.metadata.base.ProjectMetadata
+    metadata : jammies.metadata.base.ProjectMetadata
         The metadata for the current workspace.
-    clean_dir : str (default '_clean')
+    logger : `Logger`
+        A logger for reporting on information.
+    config : JammiesConfig | None (default 'None')
+        The configuration settings.
+    clean_dir : str (default 'clean')
         The directory to generate the clean workspace within.
     invalidate_cache : bool (default False)
         When `True`, removes any cached files from the clean workspace.
@@ -149,16 +152,16 @@ def setup_clean(metadata: ProjectMetadata, clean_dir: str = '_clean',
     # If the cache exists, then skip generation
     ## Otherwise generate the metadata information
     return True if os.path.exists(clean_dir) and os.path.isdir(clean_dir) \
-        else metadata.setup(clean_dir)
+        else metadata.setup(clean_dir, logger, config = config)
 
-def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> bool:
+def apply_patches(working_dir: str = 'src', patch_dir: str = 'patches') -> bool:
     """Applies patches to the working directory.
 
     Parameters
     ----------
-    working_dir : str (default '_src')
+    working_dir : str (default 'src')
         The directory containing the clean workspace to-be patched. 
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
     
     Returns
@@ -186,20 +189,20 @@ def apply_patches(working_dir: str = '_src', patch_dir: str = '_patches') -> boo
 
     return True
 
-def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
-        patch_dir: str = '_patches', out_dir: str = '_out', include_hidden: bool = False) -> bool:
+def setup_working(clean_dir: str = 'clean', working_dir: str = 'src',
+        patch_dir: str = 'patches', out_dir: str = 'out', include_hidden: bool = False) -> bool:
     """Generates a working directory from the project metadata and any additional
     files and patches.
 
     Parameters
     ----------
-    clean_dir : str (default '_clean')
+    clean_dir : str (default 'clean')
         The directory containing the raw project files.
-    working_dir : str (default '_src')
+    working_dir : str (default 'src')
         The directory containing the clean workspace to-be patched. 
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
-    out_dir : str (default '_out')
+    out_dir : str (default 'out')
         The directory containing additional files for the workspace.
     include_hidden : bool (default False)
         When `True`, copies hidden files to the working directory.
@@ -227,18 +230,18 @@ def setup_working(clean_dir: str = '_clean', working_dir: str = '_src',
     return setup_working_raw(working_dir = working_dir, patch_dir = patch_dir,
         out_dir = out_dir)
 
-def setup_working_raw(working_dir: str = '_src', patch_dir: str = '_patches',
-        out_dir: str = '_out') -> bool:
+def setup_working_raw(working_dir: str = 'src', patch_dir: str = 'patches',
+        out_dir: str = 'out') -> bool:
     """Generates a working directory from the project metadata and any additional
     files and patches. Performs no validation checks.
 
     Parameters
     ----------
-    working_dir : str (default '_src')
+    working_dir : str (default 'src')
         The directory containing the clean workspace to-be patched. 
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
-    out_dir : str (default '_out')
+    out_dir : str (default 'out')
         The directory containing additional files for the workspace.
     
     Returns
@@ -257,7 +260,7 @@ def setup_working_raw(working_dir: str = '_src', patch_dir: str = '_patches',
         else True
 
 def check_existing_patch(rel_patch_path: str, patch_path: str,
-        patch_text: str, patch_dir: str = '_patches') -> bool:
+        patch_text: str, patch_dir: str = 'patches') -> bool:
     """Returns whether there is an equivalent, existing patch and copies it from the
     temporary directory.
 
@@ -269,7 +272,7 @@ def check_existing_patch(rel_patch_path: str, patch_path: str,
         The path to the patch output location.
     patch_text : str
         The text of the patch file.
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
 
     Returns
@@ -282,7 +285,7 @@ def check_existing_patch(rel_patch_path: str, patch_path: str,
             os.path.join(os.path.join(_TMP_DIR, patch_dir), rel_patch_path)):
         # Read existing patch for comparison
         patch_text_no_head: str = ''.join(patch_text.splitlines(keepends = True)[2:])
-        temp_patch_text: Optional[str] = None
+        temp_patch_text: str | None = None
         with open(temp_patch_path, mode = 'r', encoding = 'UTF-8') as temp_patch_file:
             temp_patch_text: str = ''.join(temp_patch_file.readlines()[2:])
 
@@ -294,7 +297,7 @@ def check_existing_patch(rel_patch_path: str, patch_path: str,
     return False
 
 def generate_patch(path: str, work_path: str, clean_path: str,
-        patch_dir: str = '_patches', time: str = str(datetime.now())) -> bool:
+        patch_dir: str = 'patches', time: str = str(datetime.now())) -> bool:
     """Generates a patch between two files if they are not equal.
 
     Parameters
@@ -305,7 +308,7 @@ def generate_patch(path: str, work_path: str, clean_path: str,
         The path of the file in the working directory.
     clean_path : str
         The path of the file in the clean directory.
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
     time : str  (default `datetime.datetime.now`)
         The time the patch was generated.
@@ -317,7 +320,6 @@ def generate_patch(path: str, work_path: str, clean_path: str,
     """
 
     # Assume patches directory exists
-
     with open(work_path, mode = 'r', encoding = 'UTF-8') as work_file, \
             open(clean_path, mode = 'r', encoding = 'UTF-8') as clean_file:
         # Generate patch file if not empty
@@ -339,7 +341,7 @@ def generate_patch(path: str, work_path: str, clean_path: str,
 
     return True
 
-def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
+def output_file(path: str, work_path: str, out_dir: str = 'out') -> bool:
     """Copies an additional file for the workspace to the output directory.
     
     Parameters
@@ -348,7 +350,7 @@ def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
         The relative path of the file.
     work_path : str
         The path of the file in the working directory.
-    out_dir : str (default '_out')
+    out_dir : str (default 'out')
         The directory containing additional files for the workspace.
 
     Returns
@@ -366,21 +368,21 @@ def output_file(path: str, work_path: str, out_dir: str = '_out') -> bool:
 
     return True
 
-def output_working(metadata: ProjectMetadata, clean_dir: str = '_clean', working_dir: str = '_src',
-        patch_dir: str = '_patches', out_dir: str = '_out') -> bool:
+def output_working(metadata: ProjectMetadata, clean_dir: str = 'clean', working_dir: str = 'src',
+        patch_dir: str = 'patches', out_dir: str = 'out') -> bool:
     """Generates the patches and copies any additional files for construction.
     
     Parameters
     ----------
-    metadata : project_patcher.metadata.base.ProjectMetadata
+    metadata : jammies.metadata.base.ProjectMetadata
         The metadata for the current workspace.
-    clean_dir : str (default '_clean')
+    clean_dir : str (default 'clean')
         The directory containing the raw project files.
-    working_dir : str (default '_src')
+    working_dir : str (default 'src')
         The directory containing the clean workspace to-be patched. 
-    patch_dir : str (default '_patches')
+    patch_dir : str (default 'patches')
         The directory containing the patches for the project files.
-    out_dir : str (default '_out')
+    out_dir : str (default 'out')
         The directory containing additional files for the workspace.
 
     Returns
