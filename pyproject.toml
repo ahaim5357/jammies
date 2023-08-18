@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jammies"
-version = "0.4.1"
+version = "0.4.2"
 authors = [
     { name = "Aaron Haim", email = "ahaim@ashwork.net" }
 ]
@@ -23,12 +23,15 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://github.com/ahaim5357/project-patcher"
-issue_tracker = "https://github.com/ahaim5357/project-patcher/issues"
+homepage = "https://github.com/ahaim5357/jammies"
+issue_tracker = "https://github.com/ahaim5357/jammies/issues"
 
 [project.optional-dependencies]
 git = ["GitPython>=3.1"]
-notebook = ["nbconvert>=7"]
+notebook = [
+    "nbconvert>=7",
+    "ipython>=7"
+]
 all = ["jammies[git,notebook]"]
 
 [tools.setuptools.packages.find]

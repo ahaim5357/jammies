@@ -61,8 +61,8 @@ def notebook_to_script(logger: Logger, current_dir: str) -> bool:
                 stdout = sp.DEVNULL
             ).returncode == 0:
                 result = True
-        else:
-            failed += filename
+            else:
+                failed.append(filename)
 
     if failed:
         return logger.error(

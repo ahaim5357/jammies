@@ -75,4 +75,4 @@ The following commands can be accessed from the command line interface:
 
 ## Contributing
 
-`prjmn` is built for Python 3.8+ while being developed on 3.11.
+`jammies` is built for Python 3.8+ while being developed on 3.11.
