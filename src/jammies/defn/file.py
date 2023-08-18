@@ -63,18 +63,22 @@ class ProjectFile(ABC):
         return self._codec
 
     @abstractmethod
-    def setup(self, root_dir: str) -> bool:
+    def setup(self, root_dir: str, ignore_sub_directory: bool = False) -> bool:
         """Sets up the project file for usage.
 
         Parameters
         ----------
         root_dir : str
             The root directory to set up the project file in.
+        ignore_sub_directory : bool (default `False`)
+            When `False`, uses the root directory appended with the file's subdirectory.
         """
-        os.makedirs(self._create_path(root_dir), exist_ok = True)
+        # Create base if subdirectory should exist
+        if not ignore_sub_directory:
+            os.makedirs(self.create_path(root_dir), exist_ok = True)
         return False
 
-    def _create_path(self, root_dir: str, *paths: str) -> str:
+    def create_path(self, root_dir: str, *paths: str) -> str:
         """Constructs a path from the root directory through the relative
         directory and any additional paths specified.
 
