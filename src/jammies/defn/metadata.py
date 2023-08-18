@@ -2,7 +2,7 @@
 """
 
 import os
-from typing import List, Tuple, Set, Dict, Callable
+from typing import List, Tuple, Set, Dict
 from pathlib import Path
 import shutil
 import fnmatch
@@ -112,11 +112,11 @@ class ProjectMetadata:
             config.internal.clear_generated_files()
 
         failed: List[ProjectFile] = []
-        tmp_root: str = os.sep.join([root_dir, '.tmp'])
+        tmp_root: str = os.path.join(root_dir, '.tmp')
 
         for file in self.files: # type: ProjectFile
             # Setup file
-            if not file.setup(tmp_root):
+            if not file.setup(tmp_root, ignore_sub_directory = True):
                 logger.error(f'Failed to setup {file.registry_name()}')
                 failed.append(file)
                 shutil.rmtree(tmp_root)
@@ -130,7 +130,7 @@ class ProjectMetadata:
                 shutil.rmtree(tmp_root)
                 continue
 
-            shutil.copytree(tmp_root, root_dir,
+            shutil.copytree(tmp_root, file.create_path(root_dir),
                 copy_function=lambda src, dst: self.__copy_and_log(src, dst, config) \
                     if config else shutil.copy2,
                 dirs_exist_ok=True

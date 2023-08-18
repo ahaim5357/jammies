@@ -48,7 +48,7 @@ def unpack(logger: Logger, current_dir: str, **kwargs) -> bool:
             recursive = kwargs['recursive'] if 'recursive' in kwargs else False):
         # Check if file is an archive
         if os.path.isfile(filename) and _find_unpack_format(filename):
-            archives += filename
+            archives.append(filename)
 
     for filename in archives:
         logger.debug(f'Found: {filename}')

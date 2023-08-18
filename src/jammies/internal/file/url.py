@@ -41,10 +41,11 @@ class URLProjectFile(ProjectFile):
     def registry_name(self) -> str:
         return _REGISTRY_NAME
 
-    def setup(self, root_dir: str) -> bool:
-        super().setup(root_dir)
+    def setup(self, root_dir: str, ignore_sub_directory: bool = False) -> bool:
+        super().setup(root_dir, ignore_sub_directory = ignore_sub_directory)
+        base_path: str = root_dir if ignore_sub_directory else self.create_path(root_dir)
         return download_and_write(self.url, unzip_file = False,
-            out_dir = self._create_path(root_dir))
+            out_dir = base_path)
 
 def build_url(registrar: JammiesRegistrar) -> URLProjectFile:
     """Builds an URLProjectFile from user input.

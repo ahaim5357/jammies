@@ -43,9 +43,10 @@ class OSFProjectFile(ProjectFile):
     def registry_name(self) -> str:
         return _REGISTRY_NAME
 
-    def setup(self, root_dir: str) -> bool:
-        super().setup(root_dir)
-        return download_and_write(self.__url, out_dir = self._create_path(root_dir))
+    def setup(self, root_dir: str, ignore_sub_directory: bool = False) -> bool:
+        super().setup(root_dir, ignore_sub_directory = ignore_sub_directory)
+        base_path: str = root_dir if ignore_sub_directory else self.create_path(root_dir)
+        return download_and_write(self.__url, out_dir = base_path)
 
 def build_osf(registrar: JammiesRegistrar) -> OSFProjectFile:
     """Builds an OSFProjectFile from user input.

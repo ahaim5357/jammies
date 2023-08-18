@@ -1,6 +1,7 @@
 """A script obtaining a project file from a git repository.
 """
 
+import os
 from typing import Set
 from git import Repo
 from git.util import rmtree
@@ -59,15 +60,16 @@ class GitProjectFile(ProjectFile):
     def registry_name(self) -> str:
         return _REGISTRY_NAME
 
-    def setup(self, root_dir: str) -> bool:
-        super().setup(root_dir)
+    def setup(self, root_dir: str, ignore_sub_directory: bool = False) -> bool:
+        super().setup(root_dir, ignore_sub_directory = ignore_sub_directory)
+        base_path: str = root_dir if ignore_sub_directory else self.create_path(root_dir)
 
         # Checkout and change branches, if applicable
-        with Repo.clone_from(self.repository, self._create_path(root_dir)) as repo:
+        with Repo.clone_from(self.repository, base_path) as repo:
             if self.branch is not None:
                 repo.git.checkout(self.branch)
 
-        rmtree(self._create_path(root_dir, '.git'))
+        rmtree(os.path.join(base_path, '.git'))
         return True
 
 def build_git(registrar: JammiesRegistrar) -> GitProjectFile:
