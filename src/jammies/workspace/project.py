@@ -414,11 +414,12 @@ def output_working(metadata: ProjectMetadata, clean_dir: str = 'clean', working_
             clean_path: str = os.path.join(clean_dir, rel_path)
             rel_path_posix: str = PurePath(rel_path).as_posix()
 
+            if rel_path_posix in ignore:
+                pass # Do nothing if files are ignored
+
             # If clean file exists, generate patch and write
-            if os.path.exists(clean_path):
-                if rel_path_posix in ignore:
-                    pass # Ignore patch generation if in relative
-                elif rel_path_posix in overwrite:
+            elif os.path.exists(clean_path):
+                if rel_path_posix in overwrite:
                     # Copy file to output if overwrite
                     output_file(rel_path, work_path, out_dir = out_dir)
                 else:
