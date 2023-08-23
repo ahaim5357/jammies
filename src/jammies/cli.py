@@ -277,7 +277,7 @@ def init(import_metadata: str | None = None, include_hidden: bool = False,
     prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
     prj_config.update_and_write(
-        lambda conf: _set_warning_message(conf, download_all),
+        lambda conf: _set_warning_message(conf, not download_all),
         save = download_all
     )
 
@@ -343,7 +343,7 @@ def clean(import_metadata: str | None = None, download_all: bool = False) -> Non
     prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
     prj_config.update_and_write(
-        lambda conf: _set_warning_message(conf, download_all),
+        lambda conf: _set_warning_message(conf, not download_all),
         save = download_all
     )
 
@@ -381,7 +381,7 @@ def source(import_metadata: str | None = None, download_all: bool = False) -> No
     prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
     prj_config.update_and_write(
-        lambda conf: _set_warning_message(conf, download_all),
+        lambda conf: _set_warning_message(conf, not download_all),
         save = download_all
     )
 
