@@ -238,6 +238,16 @@ def patch() -> None:
     """Helpers to patch an existing project.
     """
 
+def _set_warning_message(conf: JammiesConfig, val: bool) -> None:
+    """Enables or disables the prompt for warning message within the config.
+    
+    Parameters
+    ----------
+    config : JammiesConfig
+        The configuration settings.
+    """
+    conf.project.display_warning_message = val
+
 @patch.command(name = 'init')
 @click.option(
     '--import_metadata', '-I',
@@ -250,7 +260,13 @@ def patch() -> None:
     is_flag = True,
     help = 'When added, copies hidden files to the working directory.'
 )
-def init(import_metadata: str | None = None, include_hidden: bool = False) -> None:
+@click.option(
+    '--yes-download-all', '-y', 'download_all',
+    is_flag = True,
+    help = 'When added, downloads all project files specified in the metadata without prompting.'
+)
+def init(import_metadata: str | None = None, include_hidden: bool = False,
+        download_all: bool = False) -> None:
     """Initializes a new project or an existing project from the
     metadata JSON in the executing directory, an import, or from
     the metadata builder if neither are present.
@@ -260,6 +276,10 @@ def init(import_metadata: str | None = None, include_hidden: bool = False) -> No
     logger: Logger = Logger()
     prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
+    prj_config.update_and_write(
+        lambda conf: _set_warning_message(conf, download_all),
+        save = download_all
+    )
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(dirpath = prj_config.dirpath,
@@ -307,7 +327,12 @@ def output() -> None:
     default = None,
     help = 'A path or URL to the metadata JSON.'
 )
-def clean(import_metadata: str | None = None) -> None:
+@click.option(
+    '--yes-download-all', '-y', 'download_all',
+    is_flag = True,
+    help = 'When added, downloads all project files specified in the metadata without prompting.'
+)
+def clean(import_metadata: str | None = None, download_all: bool = False) -> None:
     """Initializes a clean workspace from the
     metadata JSON in the executing directory, an import, or from
     the metadata builder if neither are present.
@@ -317,6 +342,10 @@ def clean(import_metadata: str | None = None) -> None:
     logger: Logger = Logger()
     prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
+    prj_config.update_and_write(
+        lambda conf: _set_warning_message(conf, download_all),
+        save = download_all
+    )
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(dirpath = prj_config.dirpath,
@@ -336,7 +365,12 @@ def clean(import_metadata: str | None = None) -> None:
     default = None,
     help = 'A path or URL to the metadata JSON.'
 )
-def source(import_metadata: str | None = None) -> None:
+@click.option(
+    '--yes-download-all', '-y', 'download_all',
+    is_flag = True,
+    help = 'When added, downloads all project files specified in the metadata without prompting.'
+)
+def source(import_metadata: str | None = None, download_all: bool = False) -> None:
     """Initializes a patched workspace from the
     metadata JSON in the executing directory, an import, or from
     the metadata builder if neither are present.
@@ -346,6 +380,10 @@ def source(import_metadata: str | None = None) -> None:
     logger: Logger = Logger()
     prj_config: JammiesConfig = load_config()
     setup_registrar(logger, prj_config)
+    prj_config.update_and_write(
+        lambda conf: _set_warning_message(conf, download_all),
+        save = download_all
+    )
 
     # Get metadata
     metadata: ProjectMetadata = wspc.read_metadata(dirpath = prj_config.dirpath,
