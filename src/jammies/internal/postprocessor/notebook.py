@@ -32,7 +32,7 @@ def setup(registrar: JammiesRegistrar) -> None:
             + '-> pip install nbconvert'
         )
 
-def notebook_to_script(logger: Logger, current_dir: str) -> bool:
+def notebook_to_script(logger: Logger, current_dir: str, **_) -> bool:
     """Converts a Python notebook to a script via `nbconvert`.
     
     Parameters

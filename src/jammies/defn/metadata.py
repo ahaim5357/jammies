@@ -3,7 +3,7 @@
 
 import os
 from typing import List, Tuple, Set, Dict
-from pathlib import Path
+from pathlib import Path, PurePath
 import shutil
 import fnmatch
 from jammies.log import Logger
@@ -51,11 +51,13 @@ class ProjectMetadata:
                 self.location[key] = value
         self.extra: DictObject = {} if extra is None else extra
 
-    def __copy_and_log(self, src: str, dst: str, config: JammiesConfig) -> object:
+    def __copy_and_log(self, root: str, src: str, dst: str, config: JammiesConfig) -> object:
         """Copies and logs a generated file.
 
         Parameters
         ----------
+        root : str
+            The root directory of the file.
         src : str
             The source location of the file.
         dst : str
@@ -65,7 +67,7 @@ class ProjectMetadata:
         """
 
         output: object = shutil.copy2(src, dst)
-        config.internal.add_generated_file(dst)
+        config.internal.add_generated_file(PurePath(dst[(len(root) + 1):]).as_posix())
         return output
 
     def setup(self, root_dir: str, logger: Logger, config: JammiesConfig | None = None) -> bool:
@@ -117,21 +119,23 @@ class ProjectMetadata:
         for file in self.files: # type: ProjectFile
             # Setup file
             if not file.setup(tmp_root, ignore_sub_directory = True):
-                logger.error(f'Failed to setup {file.registry_name()}')
+                logger.error(f'Failed to setup {file.name if file.name else file.registry_name()}')
                 failed.append(file)
                 shutil.rmtree(tmp_root)
                 continue
 
             # Apply post processor
-            if file.post_processor and not file.post_processor[0](logger, tmp_root):
+            if file.post_processor and \
+                    not file.post_processor[0](logger, tmp_root, **file.post_processor[1]):
                 pp_name: str = file.post_processor[1]['type']
-                logger.error(f'Failed to apply post processor {pp_name} to {file.registry_name()}')
+                logger.error(f'Failed to apply post processor \'{pp_name}\' ' \
+                                + f'to {file.name if file.name else file.registry_name()}')
                 failed.append(file)
                 shutil.rmtree(tmp_root)
                 continue
 
             shutil.copytree(tmp_root, file.create_path(root_dir),
-                copy_function=lambda src, dst: self.__copy_and_log(src, dst, config) \
+                copy_function=lambda src, dst: self.__copy_and_log(root_dir, src, dst, config) \
                     if config else shutil.copy2,
                 dirs_exist_ok=True
             )
@@ -139,7 +143,7 @@ class ProjectMetadata:
 
         # Write generated files
         if config:
-            config.update_and_write(lambda config: None, save = True)
+            config.update_and_write(lambda _: None, save = True)
 
         # Verify no files failed at any point
         return not failed

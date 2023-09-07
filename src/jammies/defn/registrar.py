@@ -12,8 +12,10 @@ from jammies.defn.metadata import METADATA_CODEC
 import jammies.internal.file.osf as file_osf
 import jammies.internal.file.url as file_url
 import jammies.internal.file.gitrepo as file_git
+import jammies.internal.postprocessor.pand as post_and 
 import jammies.internal.postprocessor.unpack as post_unpack
 import jammies.internal.postprocessor.notebook as post_notebook
+import jammies.internal.postprocessor.fops as post_fops
 
 class RegistryError(Exception):
     """Raised when an error occurs when operating on a registry."""
@@ -127,8 +129,10 @@ def setup(logger: Logger, config: JammiesConfig) -> None:
     file_osf.setup(REGISTRAR)
     file_url.setup(REGISTRAR)
     file_git.setup(REGISTRAR)
+    post_and.setup(REGISTRAR)
     post_unpack.setup(REGISTRAR)
     post_notebook.setup(REGISTRAR)
+    post_fops.setup(REGISTRAR)
 
     REGISTRAR.stage()
 
